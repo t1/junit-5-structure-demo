@@ -6,7 +6,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
-class NestedGivenTest {
+class _1b_StructuredFixtureWithAnonymousInitializerTest {
 
 
     private String input;

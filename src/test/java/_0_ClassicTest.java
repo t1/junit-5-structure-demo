@@ -1,11 +1,10 @@
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
 
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
-class ClassicTest {
+class _0_ClassicTest {
 
 
     private String input;
@@ -17,7 +16,9 @@ class ClassicTest {
 
     private void givenSpaceOnlyDocument() { input = " "; }
 
-    private void givenCommentOnlyDocument() { input = "# test comment"; }
+    private void givenOneCommentOnlyDocument() { input = "# test comment"; }
+
+    private void givenTwoCommentOnlyDocuments() { input = "# test comment\n---\n# test comment 2"; }
 
 
     ///////////////////////////////////////////////////////////////////////// WHEN
@@ -39,6 +40,7 @@ class ClassicTest {
 
     private static final Document EMPTY_DOCUMENT = new Document();
     private static final Document COMMENT_ONLY = new Document().comment(new Comment().text("test comment"));
+    private static final Document COMMENT_ONLY_2 = new Document().comment(new Comment().text("test comment 2"));
 
 
     private void thenIsEmpty(Stream stream) { assertThat(stream.documents()).isEmpty(); }
@@ -47,12 +49,16 @@ class ClassicTest {
         assertThat(thrown).hasMessage("expected at least one document, but found none");
     }
 
-    private void thenExpectedExactlyOne(ParseException thrown) {
+    private void thenExpectedExactlyOneButFoundNone(ParseException thrown) {
         assertThat(thrown).hasMessage("expected exactly one document, but found 0");
     }
 
+    private void thenExpectedExactlyOneButFoundTwo(ParseException thrown) {
+        assertThat(thrown).hasMessage("expected exactly one document, but found 2");
+    }
+
     private void thenHasOneEmptyDocument(Stream stream) {
-        assertThat(stream.documents()).isEqualTo(singletonList(EMPTY_DOCUMENT));
+        assertThat(stream.documents()).containsExactly(EMPTY_DOCUMENT);
     }
 
     private void thenIsEmptyDocument(Document document) {
@@ -60,17 +66,21 @@ class ClassicTest {
     }
 
     private void thenHasOneCommentOnlyDocument(Stream stream) {
-        assertThat(stream.documents()).isEqualTo(singletonList(COMMENT_ONLY));
+        assertThat(stream.documents()).containsExactly(COMMENT_ONLY);
     }
 
     private void thenIsCommentOnlyDocument(Document document) {
         assertThat(document).isEqualTo(COMMENT_ONLY);
     }
 
+    private void thenHasTwoCommentOnlyDocuments(Stream stream) {
+        assertThat(stream.documents()).containsExactly(COMMENT_ONLY, COMMENT_ONLY_2);
+    }
+
 
     ///////////////////////////////////////////////////////////////////////// TESTS
 
-    @Test void shouldParseAllInEmpty() {
+    @Test void shouldParseAllInEmptyDocument() {
         givenEmptyDocument();
 
         Stream stream = whenParseAll();
@@ -78,7 +88,7 @@ class ClassicTest {
         thenIsEmpty(stream);
     }
 
-    @Test void shouldParseFirstInEmpty() {
+    @Test void shouldParseFirstInEmptyDocument() {
         givenEmptyDocument();
 
         ParseException thrown = whenParseFirstThrows();
@@ -86,16 +96,16 @@ class ClassicTest {
         thenExpectedAtLeastOne(thrown);
     }
 
-    @Test void shouldParseSingleInEmpty() {
+    @Test void shouldParseSingleInEmptyDocument() {
         givenEmptyDocument();
 
         ParseException thrown = whenParseSingleThrows();
 
-        thenExpectedExactlyOne(thrown);
+        thenExpectedExactlyOneButFoundNone(thrown);
     }
 
 
-    @Test void shouldParseAllInSpaceOnly() {
+    @Test void shouldParseAllInSpaceOnlyDocument() {
         givenSpaceOnlyDocument();
 
         Stream stream = whenParseAll();
@@ -103,7 +113,7 @@ class ClassicTest {
         thenHasOneEmptyDocument(stream);
     }
 
-    @Test void shouldParseFirstInSpaceOnly() {
+    @Test void shouldParseFirstInSpaceOnlyDocument() {
         givenSpaceOnlyDocument();
 
         Document document = whenParseFirst();
@@ -111,7 +121,7 @@ class ClassicTest {
         thenIsEmptyDocument(document);
     }
 
-    @Test void shouldParseSingleInSpaceOnly() {
+    @Test void shouldParseSingleInSpaceOnlyDocument() {
         givenSpaceOnlyDocument();
 
         Document document = whenParseSingle();
@@ -120,27 +130,52 @@ class ClassicTest {
     }
 
 
-    @Test void shouldParseAllInDocumentOnly() {
-        givenCommentOnlyDocument();
+    @Test void shouldParseAllInDocumentOnlyDocument() {
+        givenOneCommentOnlyDocument();
 
         Stream stream = whenParseAll();
 
         thenHasOneCommentOnlyDocument(stream);
     }
 
-    @Test void shouldParseFirstInDocumentOnly() {
-        givenCommentOnlyDocument();
+    @Test void shouldParseFirstInDocumentOnlyDocument() {
+        givenOneCommentOnlyDocument();
 
         Document document = whenParseFirst();
 
         thenIsCommentOnlyDocument(document);
     }
 
-    @Test void shouldParseSingleInDocumentOnly() {
-        givenCommentOnlyDocument();
+    @Test void shouldParseSingleInDocumentOnlyDocument() {
+        givenOneCommentOnlyDocument();
 
         Document document = whenParseSingle();
 
         thenIsCommentOnlyDocument(document);
+    }
+
+
+    @Test void shouldParseAllInTwoDocuments() {
+        givenTwoCommentOnlyDocuments();
+
+        Stream stream = whenParseAll();
+
+        thenHasTwoCommentOnlyDocuments(stream);
+    }
+
+    @Test void shouldParseFirstInTwoDocuments() {
+        givenTwoCommentOnlyDocuments();
+
+        Document document = whenParseFirst();
+
+        thenIsCommentOnlyDocument(document);
+    }
+
+    @Test void shouldFailToParseSingleInTwoDocuments() {
+        givenTwoCommentOnlyDocuments();
+
+        ParseException thrown = whenParseSingleThrows();
+
+        thenExpectedExactlyOneButFoundTwo(thrown);
     }
 }

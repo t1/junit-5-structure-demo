@@ -23,6 +23,10 @@ public class Parser {
                 return new Stream().document(new Document());
             case "# test comment":
                 return new Stream().document(new Document().comment(new Comment().text("test comment")));
+            case "# test comment\n---\n# test comment 2":
+                return new Stream()
+                    .document(new Document().comment(new Comment().text("test comment")))
+                    .document(new Document().comment(new Comment().text("test comment 2")));
             default:
                 throw new ParseException("unsupported document");
         }

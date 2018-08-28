@@ -9,7 +9,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
-class ExperimentalTest {
+class _8_ExperimentalTest {
     ///////////////////////////////////// inputs
     private static String input;
     private static Document expected;

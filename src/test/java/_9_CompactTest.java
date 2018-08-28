@@ -9,7 +9,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
-class CompactTest {
+class _9_CompactTest {
     @RequiredArgsConstructor
     private abstract class AllFirstAndSingle {
         final String input;
