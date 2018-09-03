@@ -48,7 +48,7 @@ class _8_ExperimentalTest {
     @Nested class givenSpaceOnlyDocument {
         @BeforeEach void givenSpaceOnlyDocument() {
             input = " ";
-            expected = new Document();
+            expected = new Document().content(" ");
         }
 
         @Nested class whenParseAll extends ParseAll implements ThenIsStreamOfOne {}

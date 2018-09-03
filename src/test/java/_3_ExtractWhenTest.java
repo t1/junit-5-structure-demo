@@ -2,6 +2,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.assertj.core.api.Assertions.fail;
@@ -105,14 +107,13 @@ class _3_ExtractWhenTest {
 
 
         @Test void whenParseFirst() {
-            ParseException thrown = catchThrowableOfType(() -> {
-                Document document = Parser.parseFirst(input);
-
-                verifyParseFirst(document);
-            }, ParseException.class);
+            AtomicReference<Document> document = new AtomicReference<>();
+            ParseException thrown = catchThrowableOfType(() -> document.set(Parser.parseFirst(input)), ParseException.class);
 
             if (thrown != null)
                 verifyParseFirstException(thrown);
+            else
+                verifyParseFirst(document.get());
         }
 
         protected void verifyParseFirst(Document document) {
@@ -125,14 +126,13 @@ class _3_ExtractWhenTest {
 
 
         @Test void whenParseSingle() {
-            ParseException thrown = catchThrowableOfType(() -> {
-                Document document = Parser.parseSingle(input);
-
-                verifyParseSingle(document);
-            }, ParseException.class);
+            AtomicReference<Document> document = new AtomicReference<>();
+            ParseException thrown = catchThrowableOfType(() -> document.set(Parser.parseSingle(input)), ParseException.class);
 
             if (thrown != null)
                 verifyParseSingleException(thrown);
+            else
+                verifyParseSingle(document.get());
         }
 
         protected void verifyParseSingle(Document document) {
@@ -147,7 +147,7 @@ class _3_ExtractWhenTest {
 
     ///////////////////////////////////////////////////////////////////////// THEN
 
-    private static final Document EMPTY_DOCUMENT = new Document();
+    private static final Document EMPTY_DOCUMENT = new Document().content(" ");
     private static final Document COMMENT_ONLY = new Document().comment(new Comment().text("test comment"));
     private static final Document COMMENT_ONLY_2 = new Document().comment(new Comment().text("test comment 2"));
 

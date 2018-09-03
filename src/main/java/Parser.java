@@ -20,7 +20,7 @@ public class Parser {
             case "":
                 return new Stream();
             case " ":
-                return new Stream().document(new Document());
+                return new Stream().document(new Document().content(" "));
             case "# test comment":
                 return new Stream().document(new Document().comment(new Comment().text("test comment")));
             case "# test comment\n---\n# test comment 2":

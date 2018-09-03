@@ -134,7 +134,7 @@ class _2_GroupedFixturesTest {
 
     ///////////////////////////////////////////////////////////////////////// THEN
 
-    private static final Document EMPTY_DOCUMENT = new Document();
+    private static final Document EMPTY_DOCUMENT = new Document().content(" ");
     private static final Document COMMENT_ONLY = new Document().comment(new Comment().text("test comment"));
     private static final Document COMMENT_ONLY_2 = new Document().comment(new Comment().text("test comment 2"));
 

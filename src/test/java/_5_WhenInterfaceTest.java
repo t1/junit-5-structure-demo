@@ -2,6 +2,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -134,21 +135,19 @@ class _5_WhenInterfaceTest {
     }
 
     public static <T, E extends Throwable> void whenVerify(Supplier<T> call, Class<E> exceptionClass, Consumer<T> verify, Consumer<E> verifyException) {
-        E thrown = catchThrowableOfType(() -> {
-            T result = call.get();
+        AtomicReference<T> success = new AtomicReference<>();
+        E failure = catchThrowableOfType(() -> success.set(call.get()), exceptionClass);
 
-            verify.accept(result);
-        }, exceptionClass);
-
-        if (thrown != null)
-            verifyException.accept(thrown);
-
+        if (failure != null)
+            verifyException.accept(failure);
+        else
+            verify.accept(success.get());
     }
 
 
     ///////////////////////////////////////////////////////////////////////// THEN
 
-    private static final Document EMPTY_DOCUMENT = new Document();
+    private static final Document EMPTY_DOCUMENT = new Document().content(" ");
     private static final Document COMMENT_ONLY = new Document().comment(new Comment().text("test comment"));
     private static final Document COMMENT_ONLY_2 = new Document().comment(new Comment().text("test comment 2"));
 

@@ -59,7 +59,7 @@ class _9_CompactTest {
     @Nested class GivenSpaceOnlyDocument extends WhenParseAllFirstAndSingle {
         private GivenSpaceOnlyDocument() {
             super(" ");
-            val expected = new Document();
+            val expected = new Document().content(" ");
             allThen = () -> assertThat(stream.documents()).isEqualTo(singletonList(expected));
             firstThen = () -> assertThat(document).isEqualTo(expected);
             singleThen = () -> assertThat(document).isEqualTo(expected);

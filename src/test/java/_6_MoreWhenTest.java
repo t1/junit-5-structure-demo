@@ -10,88 +10,90 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.assertj.core.api.Assertions.fail;
 
-class _4_ExtractWhenVerifyTest {
+class _6_MoreWhenTest {
 
 
-    private String input;
+    private static String input;
 
 
     ///////////////////////////////////////////////////////////////////////// GIVEN
 
-    @Nested class GivenEmptyDocument extends WhenParseAllFirstAndSingle {
+    @Nested class GivenEmptyDocument implements WhenParseAllFirstAndSingle {
         @BeforeEach
         void givenEmptyDocument() {
             input = "";
         }
 
-        @Override protected void verifyParseAll(Stream stream) {
+        @Override public void verifyParseAll(Stream stream) {
             thenIsEmpty(stream);
         }
 
-        @Override protected void verifyParseFirstException(ParseException thrown) {
+        @Override public void verifyParseFirstException(ParseException thrown) {
             thenExpectedAtLeastOne(thrown);
         }
 
-        @Override protected void verifyParseSingleException(ParseException thrown) {
+        @Override public void verifyParseSingleException(ParseException thrown) {
             thenExpectedExactlyOneButFoundNone(thrown);
         }
     }
 
 
-    @Nested class GivenSpaceOnlyDocument extends WhenParseAllFirstAndSingle {
+    @Nested class GivenSpaceOnlyDocument implements WhenParseAllFirstAndSingle {
         @BeforeEach
         void givenSpaceOnlyDocument() {
             input = " ";
         }
 
-        @Override protected void verifyParseAll(Stream stream) {
+        @Override public void verifyParseAll(Stream stream) {
             thenHasOneEmptyDocument(stream);
         }
 
-        @Override protected void verifyParseFirst(Document document) {
+        @Override public void verifyParseFirst(Document document) {
             thenIsEmptyDocument(document);
         }
 
-        @Override protected void verifyParseSingle(Document document) {
+        @Override public void verifyParseSingle(Document document) {
             thenIsEmptyDocument(document);
+            thenToStringEqualsInput(document);
         }
     }
 
 
-    @Nested class GivenOneCommentOnlyDocument extends WhenParseAllFirstAndSingle {
+    @Nested class GivenOneCommentOnlyDocument implements WhenParseAllFirstAndSingle {
         @BeforeEach
         void givenOneCommentOnlyDocument() {
             input = "# test comment";
         }
 
-        @Override protected void verifyParseAll(Stream stream) {
+        @Override public void verifyParseAll(Stream stream) {
             thenHasOneCommentOnlyDocument(stream);
         }
 
-        @Override protected void verifyParseFirst(Document document) {
+        @Override public void verifyParseFirst(Document document) {
             thenIsCommentOnlyDocument(document);
         }
 
-        @Override protected void verifyParseSingle(Document document) {
+        @Override public void verifyParseSingle(Document document) {
             thenIsCommentOnlyDocument(document);
+            thenToStringEqualsInput(document);
         }
     }
 
 
-    @Nested class GivenTwoCommentOnlyDocuments extends WhenParseAllFirstAndSingle {
+    @Nested class GivenTwoCommentOnlyDocuments implements WhenParseAllFirstAndSingle {
         @BeforeEach void givenTwoCommentOnlyDocuments() {
             input = "# test comment\n---\n# test comment 2";
         }
 
-        @Override protected void verifyParseAll(Stream stream) {
+        @Override public void verifyParseAll(Stream stream) {
             thenHasTwoCommentOnlyDocuments(stream);
         }
 
-        @Override protected void verifyParseFirst(Document document) {
+        @Override public void verifyParseFirst(Document document) {
             thenIsCommentOnlyDocument(document);
         }
 
-        @Override protected void verifyParseSingleException(ParseException thrown) {
+        @Override public void verifyParseSingleException(ParseException thrown) {
             thenExpectedExactlyOneButFoundTwo(thrown);
         }
     }
@@ -99,37 +101,55 @@ class _4_ExtractWhenVerifyTest {
 
     ///////////////////////////////////////////////////////////////////////// WHEN
 
-    abstract class WhenParseAllFirstAndSingle {
-        @Test void whenParseAll() {
+    interface WhenParseAllFirstAndSingle {
+        @Test default void whenParseAll() {
             Stream stream = Parser.parseAll(input);
             verifyParseAll(stream);
+            thenToStringEqualsInput(stream);
         }
 
-        protected abstract void verifyParseAll(Stream stream);
+        void verifyParseAll(Stream stream);
 
-
-        @Test void whenParseFirst() {
-            whenVerify(() -> Parser.parseFirst(input), ParseException.class, this::verifyParseFirst, this::verifyParseFirstException);
+        default void thenToStringEqualsInput(Stream stream) {
+            assertThat(stream).hasToString(input);
         }
 
-        protected void verifyParseFirst(Document document) {
+
+        @Test default void whenParseFirst() {
+            AtomicReference<Document> success = new AtomicReference<>();
+            ParseException failure = catchThrowableOfType(() -> success.set(Parser.parseFirst(input)), ParseException.class);
+
+            if (failure != null)
+                verifyParseFirstException(failure);
+            else {
+                Document document = success.get();
+                verifyParseFirst(document);
+                thenToStringEqualsInput(document);
+            }
+        }
+
+        default void verifyParseFirst(Document document) {
             fail("expected exception was not thrown. see the verifyParseFirstException method for details");
         }
 
-        protected void verifyParseFirstException(ParseException thrown) {
+        default void verifyParseFirstException(ParseException thrown) {
             fail("unexpected exception. see verifyParseFirst for what was expected", thrown);
         }
 
+        default void thenToStringEqualsInput(Document document) {
+            assertThat(document).hasToString(input);
+        }
 
-        @Test void whenParseSingle() {
+
+        @Test default void whenParseSingle() {
             whenVerify(() -> Parser.parseSingle(input), ParseException.class, this::verifyParseSingle, this::verifyParseSingleException);
         }
 
-        protected void verifyParseSingle(Document document) {
+        default void verifyParseSingle(Document document) {
             fail("expected exception was not thrown. see the verifyParseSingleException method for details");
         }
 
-        protected void verifyParseSingleException(ParseException thrown) {
+        default void verifyParseSingleException(ParseException thrown) {
             fail("unexpected exception. see verifyParseSingle for what was expected", thrown);
         }
     }

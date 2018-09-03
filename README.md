@@ -17,6 +17,10 @@ so bear with me while I try to contrive examples with enough complexity to show 
 and I'm going to challenge your fantasy that some things, while they are just over engineered at this scale,
 will prove useful when things get bigger.
 
+If you like, you can follow the refactorings done here by looking at the tests
+in [this](https://github.com/t1/junit-5-structure-demo) git project.
+They are numbered to match the order presented here.
+
 
 ## Example: Testing a Parser With Three Methods for Four Documents
 
@@ -183,6 +187,9 @@ The JUnit runner now looks like this:
 
 ![grouped-test-run](img/grouped-test-run.png)
 
+When I group some `Given...` classes, I often add `Given...` classes for all setups, even when they contain only a single test,
+just to make things symmetrical.
+
 
 ## Extracting `when...`
 
@@ -239,6 +246,28 @@ abstract class WhenParseAllFirstAndSingle {
 }
 ```
 
+When you expect an exception, but it doesn't throw and the verification fails instead, you'll get a test failure that is not very helpful:
+
+```
+java.lang.AssertionError: Expecting code to throw <class ParseException> but threw <class java.lang.AssertionError> instead
+```
+
+So we need an even smarter `whenParseSingle`:
+
+```java
+abstract class WhenParseAllFirstAndSingle {
+    @Test void whenParseSingle() {
+        AtomicReference<Document> document = new AtomicReference<>();
+        ParseException thrown = catchThrowableOfType(() -> document.set(Parser.parseSingle(input)), ParseException.class);
+
+        if (thrown != null)
+            verifyParseSingleException(thrown);
+        else
+            verifyParseSingle(document.get());
+    }
+}
+```
+
 This does add quite some complexity to the `when...` methods, bloating them from 2 lines to 6 with a non-trivial flow.
 But we can extract that to a generic `whenVerify` method that we can put into a test utilities class or even module.
 
@@ -257,20 +286,18 @@ abstract class WhenParseAllFirstAndSingle {
     }
 
     public static <T, E extends Throwable> void whenVerify(Supplier<T> call, Class<E> exceptionClass, Consumer<T> verify, Consumer<E> verifyException) {
-        E thrown = catchThrowableOfType(() -> {
-            T result = call.get();
+        AtomicReference<T> success = new AtomicReference<>();
+        E failure = catchThrowableOfType(() -> success.set(call.get()), exceptionClass);
 
-            verify.accept(result);
-        }, exceptionClass);
-
-        if (thrown != null)
-            verifyException.accept(thrown);
-
+        if (failure != null)
+            verifyException.accept(failure);
+        else
+            verify.accept(success.get());
     }
 }
 ```
 
-In this way, even when a test that expects a result throws an exception, the error message is nice and helpful,
+In this way, even when a test that expects a result throws an exception or vice versa, the error message is nice and helpful,
 e.g. when `GivenEmptyDocument.whenParseSingle` would expect `thenIsEmptyDocument`, the exception would be (stacktraces omitted):
 
 ```
@@ -321,6 +348,63 @@ interface WhenParseAllFirstAndSingle {
 }
 ```
 
+You will commonly have tests that only apply to one setup;
+just combine tests from a `When...` class or interface with test methods local to a `Given...` class.
+
+If a test is never expected to fail (like `whenParseAll`), you can also add more verifications there.
+E.g., YAML documents and streams should render `toString` the same as the input, so we can do:
+
+```java
+interface WhenParseAllFirstAndSingle {
+    @Test default void whenParseAll() {
+        Stream stream = Parser.parseAll(input);
+        verifyParseAll(stream);
+        thenToStringEqualsInput(stream);
+    }
+}
+```
+
+This is not so easy with the tests that are sometimes expected to fail (e.g. `whenParseSingle`).
+They use the `whenVerify` which we wanted to be generic; you can give up on that and inline it like this:
+
+```java
+interface WhenParseAllFirstAndSingle {
+    @Test default void whenParseAll() {
+        Stream stream = Parser.parseAll(input);
+        verifyParseAll(stream);
+        thenToStringEqualsInput(stream);
+    }
+
+    @Test default void whenParseFirst() {
+        AtomicReference<Document> success = new AtomicReference<>();
+        ParseException failure = catchThrowableOfType(() -> success.set(Parser.parseFirst(input)), ParseException.class);
+
+        if (failure != null)
+            verifyParseFirstException(failure);
+        else {
+            Document document = success.get();
+            verifyParseFirst(document);
+            thenToStringEqualsInput(document);
+        }
+    }
+}
+```
+
+Or you can add the `thenToStringEqualsInput` to all overloaded `verifyParseFirst` methods:
+
+```java
+@Nested class GivenSpaceOnlyDocument implements WhenParseAllFirstAndSingle {
+    @Override public void verifyParseSingle(Document document) {
+        thenIsEmptyDocument(document);
+        thenToStringEqualsInput(document);
+    }
+}
+```
+
+Both options have drawbacks: The first hinders you from a reusable `whenVerify`, while the latter adds duplication and makes it easy to forget.
+Probably the first option is better over all.
+
+
 ## tl;dr
 
 To add structure to a long sequence of test methods in a class, structure them by grouping them according to their test setup
@@ -328,4 +412,4 @@ expressed by inner classes annotated as `@Nested`. Name these classes `Given...`
 Pass the objects that are set up and then used in your `when...` method in fields.
 
 When there are sets of tests that should be executed in several setups, extract them to a super class,
-or if you need more than one such set, to an interface (and make the setup fields static).
+or if you need more than one such set in one setup, to an interface (and make the setup fields static).
