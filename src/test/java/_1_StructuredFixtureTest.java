@@ -13,74 +13,6 @@ class _1_StructuredFixtureTest {
 
     ///////////////////////////////////////////////////////////////////////// GIVEN
 
-    private void givenEmptyDocument() { input = ""; }
-
-    private void givenSpaceOnlyDocument() { input = " "; }
-
-    private void givenOneCommentOnlyDocument() { input = "# test comment"; }
-
-    private void givenTwoCommentOnlyDocuments() { input = "# test comment\n---\n# test comment 2"; }
-
-
-    ///////////////////////////////////////////////////////////////////////// WHEN
-
-    private Stream whenParseAll() { return Parser.parseAll(input); }
-
-    private Document whenParseFirst() { return Parser.parseFirst(input); }
-
-    private Document whenParseSingle() { return Parser.parseSingle(input); }
-
-    private ParseException whenParseSingleThrows() { return whenThrows(this::whenParseSingle); }
-
-    private ParseException whenParseFirstThrows() { return whenThrows(this::whenParseFirst); }
-
-    private ParseException whenThrows(ThrowingCallable callable) { return catchThrowableOfType(callable, ParseException.class); }
-
-
-    ///////////////////////////////////////////////////////////////////////// THEN
-
-    private static final Document EMPTY_DOCUMENT = new Document();
-    private static final Document COMMENT_ONLY = new Document().comment(new Comment().text("test comment"));
-    private static final Document COMMENT_ONLY_2 = new Document().comment(new Comment().text("test comment 2"));
-
-
-    private void thenIsEmpty(Stream stream) { assertThat(stream.documents()).isEmpty(); }
-
-    private void thenExpectedAtLeastOne(ParseException thrown) {
-        assertThat(thrown).hasMessage("expected at least one document, but found none");
-    }
-
-    private void thenExpectedExactlyOneButFoundNone(ParseException thrown) {
-        assertThat(thrown).hasMessage("expected exactly one document, but found 0");
-    }
-
-    private void thenExpectedExactlyOneButFoundTwo(ParseException thrown) {
-        assertThat(thrown).hasMessage("expected exactly one document, but found 2");
-    }
-
-    private void thenHasOneEmptyDocument(Stream stream) {
-        assertThat(stream.documents()).containsExactly(EMPTY_DOCUMENT);
-    }
-
-    private void thenIsEmptyDocument(Document document) {
-        assertThat(document).isEqualTo(EMPTY_DOCUMENT);
-    }
-
-    private void thenHasOneCommentOnlyDocument(Stream stream) {
-        assertThat(stream.documents()).containsExactly(COMMENT_ONLY);
-    }
-
-    private void thenIsCommentOnlyDocument(Document document) {
-        assertThat(document).isEqualTo(COMMENT_ONLY);
-    }
-
-    private void thenHasTwoCommentOnlyDocuments(Stream stream) {
-        assertThat(stream.documents()).containsExactly(COMMENT_ONLY, COMMENT_ONLY_2);
-    }
-
-
-    ///////////////////////////////////////////////////////////////////////// TESTS
-
     @Nested class GivenEmptyDocument {
         @Test void shouldParseAllInEmpty() {
             givenEmptyDocument();
@@ -186,5 +118,71 @@ class _1_StructuredFixtureTest {
 
             thenExpectedExactlyOneButFoundTwo(thrown);
         }
+    }
+
+
+    private void givenEmptyDocument() { input = ""; }
+
+    private void givenSpaceOnlyDocument() { input = " "; }
+
+    private void givenOneCommentOnlyDocument() { input = "# test comment"; }
+
+    private void givenTwoCommentOnlyDocuments() { input = "# test comment\n---\n# test comment 2"; }
+
+
+    ///////////////////////////////////////////////////////////////////////// WHEN
+
+    private Stream whenParseAll() { return Parser.parseAll(input); }
+
+    private Document whenParseFirst() { return Parser.parseFirst(input); }
+
+    private Document whenParseSingle() { return Parser.parseSingle(input); }
+
+    private ParseException whenParseSingleThrows() { return whenThrows(this::whenParseSingle); }
+
+    private ParseException whenParseFirstThrows() { return whenThrows(this::whenParseFirst); }
+
+    private ParseException whenThrows(ThrowingCallable callable) { return catchThrowableOfType(callable, ParseException.class); }
+
+
+    ///////////////////////////////////////////////////////////////////////// THEN
+
+    private static final Document EMPTY_DOCUMENT = new Document();
+    private static final Document COMMENT_ONLY = new Document().comment(new Comment().text("test comment"));
+    private static final Document COMMENT_ONLY_2 = new Document().comment(new Comment().text("test comment 2"));
+
+
+    private void thenIsEmpty(Stream stream) { assertThat(stream.documents()).isEmpty(); }
+
+    private void thenExpectedAtLeastOne(ParseException thrown) {
+        assertThat(thrown).hasMessage("expected at least one document, but found none");
+    }
+
+    private void thenExpectedExactlyOneButFoundNone(ParseException thrown) {
+        assertThat(thrown).hasMessage("expected exactly one document, but found 0");
+    }
+
+    private void thenExpectedExactlyOneButFoundTwo(ParseException thrown) {
+        assertThat(thrown).hasMessage("expected exactly one document, but found 2");
+    }
+
+    private void thenHasOneEmptyDocument(Stream stream) {
+        assertThat(stream.documents()).containsExactly(EMPTY_DOCUMENT);
+    }
+
+    private void thenIsEmptyDocument(Document document) {
+        assertThat(document).isEqualTo(EMPTY_DOCUMENT);
+    }
+
+    private void thenHasOneCommentOnlyDocument(Stream stream) {
+        assertThat(stream.documents()).containsExactly(COMMENT_ONLY);
+    }
+
+    private void thenIsCommentOnlyDocument(Document document) {
+        assertThat(document).isEqualTo(COMMENT_ONLY);
+    }
+
+    private void thenHasTwoCommentOnlyDocuments(Stream stream) {
+        assertThat(stream.documents()).containsExactly(COMMENT_ONLY, COMMENT_ONLY_2);
     }
 }

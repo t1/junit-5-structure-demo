@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
@@ -13,6 +14,7 @@ class _8_ExperimentalTest {
     ///////////////////////////////////// inputs
     private static String input;
     private static Document expected;
+    private static Document expected2;
 
     ///////////////////////////////////// outputs
     private static Stream stream;
@@ -22,10 +24,67 @@ class _8_ExperimentalTest {
     @BeforeEach void setup() {
         input = null;
         expected = null;
+        expected2 = null;
 
         stream = null;
         document = null;
         thrown = null;
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////// GIVEN
+
+    @Nested class givenEmptyDocument {
+        @BeforeEach void givenEmptyDocument() { input = ""; }
+
+        @Nested class whenParseAll extends ParseAll implements ThenStreamIsEmpty, ThenStreamToStringIsSameAsInput {}
+
+        @Nested class whenParseFirst extends ParseFirst implements ThenThrowsExpectedAtLeastOne {}
+
+        @Nested class whenParseSingle extends ParseSingle implements ThenThrowsExpectedExactlyOneButFoundZero {}
+    }
+
+
+    @Nested class givenSpaceOnlyDocument {
+        @BeforeEach void givenSpaceOnlyDocument() {
+            input = " ";
+            expected = new Document();
+        }
+
+        @Nested class whenParseAll extends ParseAll implements ThenIsStreamOfOne {}
+
+        @Nested class whenParseFirst extends ParseFirst implements ThenDocumentIsExpected {}
+
+        @Nested class whenParseSingle extends ParseSingle implements ThenDocumentIsExpected {}
+    }
+
+
+    @Nested class givenCommentOnlyDocument {
+        @BeforeEach void givenCommentOnlyDocument() {
+            input = "# test comment";
+            expected = new Document().comment(new Comment().text("test comment"));
+        }
+
+        @Nested class whenParseAll extends ParseAll implements ThenIsStreamOfOne, ThenStreamToStringIsSameAsInput {}
+
+        @Nested class whenParseFirst extends ParseFirst implements ThenDocumentIsExpected, ThenDocumentToStringIsSameAsInput {}
+
+        @Nested class whenParseSingle extends ParseSingle implements ThenDocumentIsExpected, ThenDocumentToStringIsSameAsInput {}
+    }
+
+
+    @Nested class givenTwoCommentOnlyDocuments {
+        @BeforeEach void givenTwoCommentOnlyDocuments() {
+            input = "# test comment\n---\n# test comment 2";
+            expected = new Document().comment(new Comment().text("test comment"));
+            expected2 = new Document().comment(new Comment().text("test comment 2"));
+        }
+
+        @Nested class whenParseAll extends ParseAll implements ThenIsStreamOfTwo, ThenStreamToStringIsSameAsInput {}
+
+        @Nested class whenParseFirst extends ParseFirst implements ThenDocumentIsExpected {}
+
+        @Nested class whenParseSingle extends ParseSingle implements ThenThrowsExpectedExactlyOneButFoundTwo {}
     }
 
 
@@ -52,15 +111,19 @@ class _8_ExperimentalTest {
 
     ///////////////////////////////////////////////////////////////////////// THEN
 
-    interface ThenIsEmptyStream {
+    interface ThenStreamIsEmpty {
         @Test default void thenStreamIsEmpty() { assertThat(stream.documents()).isEmpty(); }
     }
 
-    interface ThenIsExpectedStream {
-        @Test default void thenStreamIsExpected() { assertThat(stream.documents()).isEqualTo(singletonList(expected)); }
+    interface ThenIsStreamOfOne {
+        @Test default void thenIsStreamOfOne() { assertThat(stream.documents()).isEqualTo(singletonList(expected)); }
     }
 
-    interface ThenIsExpectedDocument {
+    interface ThenIsStreamOfTwo {
+        @Test default void thenIsStreamOfTwo() { assertThat(stream.documents()).isEqualTo(asList(expected, expected2)); }
+    }
+
+    interface ThenDocumentIsExpected {
         @Test default void thenDocumentIsExpected() { assertThat(document).isEqualTo(expected); }
     }
 
@@ -77,48 +140,11 @@ class _8_ExperimentalTest {
         @Test default void thenThrowsExpectedAtLeastOne() { assertThat(thrown).hasMessage("expected at least one document, but found none"); }
     }
 
-    interface ThenThrowsExpectedExactlyOne {
-        @Test default void thenThrowsExpectedExactlyOne() { assertThat(thrown).hasMessage("expected exactly one document, but found 0"); }
+    interface ThenThrowsExpectedExactlyOneButFoundZero {
+        @Test default void thenThrowsExpectedExactlyOneButFoundZero() { assertThat(thrown).hasMessage("expected exactly one document, but found 0"); }
     }
 
-
-    ///////////////////////////////////////////////////////////////////////// GIVEN
-
-    @Nested class givenEmptyDocument {
-        @BeforeEach void setup() { input = ""; }
-
-        @Nested class whenParseAll extends ParseAll implements ThenIsEmptyStream, ThenStreamToStringIsSameAsInput {}
-
-        @Nested class whenParseFirst extends ParseFirst implements ThenThrowsExpectedAtLeastOne {}
-
-        @Nested class whenParseSingle extends ParseSingle implements ThenThrowsExpectedExactlyOne {}
-    }
-
-
-    @Nested class givenSpaceOnlyDocument {
-        @BeforeEach void setup() {
-            input = " ";
-            expected = new Document();
-        }
-
-        @Nested class whenParseAll extends ParseAll implements ThenIsExpectedStream {}
-
-        @Nested class whenParseFirst extends ParseFirst implements ThenIsExpectedDocument {}
-
-        @Nested class whenParseSingle extends ParseSingle implements ThenIsExpectedDocument {}
-    }
-
-
-    @Nested class givenCommentOnlyDocument {
-        @BeforeEach void setup() {
-            input = "# test comment";
-            expected = new Document().comment(new Comment().text("test comment"));
-        }
-
-        @Nested class whenParseAll extends ParseAll implements ThenIsExpectedStream, ThenStreamToStringIsSameAsInput {}
-
-        @Nested class whenParseFirst extends ParseFirst implements ThenIsExpectedDocument, ThenDocumentToStringIsSameAsInput {}
-
-        @Nested class whenParseSingle extends ParseSingle implements ThenIsExpectedDocument, ThenDocumentToStringIsSameAsInput {}
+    interface ThenThrowsExpectedExactlyOneButFoundTwo {
+        @Test default void thenThrowsExpectedExactlyOneButFoundTwo() { assertThat(thrown).hasMessage("expected exactly one document, but found 2"); }
     }
 }

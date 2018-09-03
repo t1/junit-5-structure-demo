@@ -1,20 +1,20 @@
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 class _9_CompactTest {
     @RequiredArgsConstructor
-    private abstract class AllFirstAndSingle {
+    abstract class WhenParseAllFirstAndSingle {
         final String input;
-
-        Document EXPECTED;
 
         Runnable allThen;
         Runnable firstThen;
@@ -46,7 +46,7 @@ class _9_CompactTest {
         }
     }
 
-    @Nested class GivenEmptyDocument extends AllFirstAndSingle {
+    @Nested class GivenEmptyDocument extends WhenParseAllFirstAndSingle {
         private GivenEmptyDocument() {
             super("");
             allThen = () -> assertThat(stream.documents()).isEmpty();
@@ -56,24 +56,36 @@ class _9_CompactTest {
     }
 
 
-    @Nested class GivenSpaceOnlyDocument extends AllFirstAndSingle {
+    @Nested class GivenSpaceOnlyDocument extends WhenParseAllFirstAndSingle {
         private GivenSpaceOnlyDocument() {
             super(" ");
-            EXPECTED = new Document();
-            allThen = () -> assertThat(stream.documents()).isEqualTo(singletonList(EXPECTED));
-            firstThen = () -> assertThat(document).isEqualTo(EXPECTED);
-            singleThen = () -> assertThat(document).isEqualTo(EXPECTED);
+            val expected = new Document();
+            allThen = () -> assertThat(stream.documents()).isEqualTo(singletonList(expected));
+            firstThen = () -> assertThat(document).isEqualTo(expected);
+            singleThen = () -> assertThat(document).isEqualTo(expected);
         }
     }
 
 
-    @Nested class GivenCommentOnlyDocument extends AllFirstAndSingle {
+    @Nested class GivenCommentOnlyDocument extends WhenParseAllFirstAndSingle {
         private GivenCommentOnlyDocument() {
             super("# test comment");
-            EXPECTED = new Document().comment(new Comment().text("test comment"));
-            allThen = () -> assertThat(stream.documents()).isEqualTo(singletonList(EXPECTED));
-            firstThen = () -> assertThat(document).isEqualTo(EXPECTED);
-            singleThen = () -> assertThat(document).isEqualTo(EXPECTED);
+            val expected = new Document().comment(new Comment().text("test comment"));
+            allThen = () -> assertThat(stream.documents()).isEqualTo(singletonList(expected));
+            firstThen = () -> assertThat(document).isEqualTo(expected);
+            singleThen = () -> assertThat(document).isEqualTo(expected);
+        }
+    }
+
+
+    @Nested class GivenTwoCommentOnlyDocuments extends WhenParseAllFirstAndSingle {
+        private GivenTwoCommentOnlyDocuments() {
+            super("# test comment\n---\n# test comment 2");
+            val expected1 = new Document().comment(new Comment().text("test comment"));
+            val expected2 = new Document().comment(new Comment().text("test comment 2"));
+            allThen = () -> assertThat(stream.documents()).isEqualTo(asList(expected1, expected2));
+            firstThen = () -> assertThat(document).isEqualTo(expected1);
+            singleThen = () -> assertThat(thrown).hasMessage("expected exactly one document, but found 2");
         }
     }
 }

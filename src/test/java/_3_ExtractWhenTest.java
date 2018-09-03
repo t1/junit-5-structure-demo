@@ -1,12 +1,12 @@
-import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
+import static org.assertj.core.api.Assertions.fail;
 
-class _2_GroupedFixturesTest {
+class _3_ExtractWhenTest {
 
 
     private String input;
@@ -14,104 +14,80 @@ class _2_GroupedFixturesTest {
 
     ///////////////////////////////////////////////////////////////////////// GIVEN
 
-    @Nested class GivenEmptyDocument {
+    @Nested class GivenEmptyDocument extends WhenParseAllFirstAndSingle {
         @BeforeEach
         void givenEmptyDocument() {
             input = "";
         }
 
-        @Test void shouldParseAll() {
-            Stream stream = whenParseAll();
-
+        @Override protected void verifyParseAll(Stream stream) {
             thenIsEmpty(stream);
         }
 
-        @Test void shouldFailToParseFirst() {
-            ParseException thrown = whenParseFirstThrows();
-
+        @Override protected void verifyParseFirstException(ParseException thrown) {
             thenExpectedAtLeastOne(thrown);
         }
 
-        @Test void shouldFailToParseSingle() {
-            ParseException thrown = whenParseSingleThrows();
-
+        @Override protected void verifyParseSingleException(ParseException thrown) {
             thenExpectedExactlyOneButFoundNone(thrown);
         }
     }
 
 
-    @Nested class GivenSpaceOnlyDocument {
+    @Nested class GivenSpaceOnlyDocument extends WhenParseAllFirstAndSingle {
         @BeforeEach
         void givenSpaceOnlyDocument() {
             input = " ";
         }
 
-        @Test void shouldParseAll() {
-            Stream stream = whenParseAll();
-
+        @Override protected void verifyParseAll(Stream stream) {
             thenHasOneEmptyDocument(stream);
         }
 
-        @Test void shouldParseFirst() {
-            Document document = whenParseFirst();
-
+        @Override protected void verifyParseFirst(Document document) {
             thenIsEmptyDocument(document);
         }
 
-        @Test void shouldParseSingle() {
-            Document document = whenParseSingle();
-
+        @Override protected void verifyParseSingle(Document document) {
             thenIsEmptyDocument(document);
         }
     }
 
 
-    @Nested class GivenOneCommentOnlyDocument {
+    @Nested class GivenOneCommentOnlyDocument extends WhenParseAllFirstAndSingle {
         @BeforeEach
         void givenOneCommentOnlyDocument() {
             input = "# test comment";
         }
 
-        @Test void shouldParseAll() {
-            Stream stream = whenParseAll();
-
+        @Override protected void verifyParseAll(Stream stream) {
             thenHasOneCommentOnlyDocument(stream);
         }
 
-        @Test void shouldParseFirst() {
-            Document document = whenParseFirst();
-
+        @Override protected void verifyParseFirst(Document document) {
             thenIsCommentOnlyDocument(document);
         }
 
-        @Test void shouldParseSingle() {
-            Document document = whenParseSingle();
-
+        @Override protected void verifyParseSingle(Document document) {
             thenIsCommentOnlyDocument(document);
         }
     }
 
 
-    @Nested class GivenTwoCommentOnlyDocuments {
+    @Nested class GivenTwoCommentOnlyDocuments extends WhenParseAllFirstAndSingle {
         @BeforeEach void givenTwoCommentOnlyDocuments() {
             input = "# test comment\n---\n# test comment 2";
         }
 
-        @Test void shouldParseAll() {
-            Stream stream = whenParseAll();
-
+        @Override protected void verifyParseAll(Stream stream) {
             thenHasTwoCommentOnlyDocuments(stream);
         }
 
-        @Test void shouldParseFirst() {
-            Document document = whenParseFirst();
-
+        @Override protected void verifyParseFirst(Document document) {
             thenIsCommentOnlyDocument(document);
         }
 
-        @Test void shouldFailToParseSingle() {
-            ParseException thrown = whenParseSingleThrows();
-
+        @Override protected void verifyParseSingleException(ParseException thrown) {
             thenExpectedExactlyOneButFoundTwo(thrown);
         }
     }
@@ -119,17 +95,54 @@ class _2_GroupedFixturesTest {
 
     ///////////////////////////////////////////////////////////////////////// WHEN
 
-    private Stream whenParseAll() { return Parser.parseAll(input); }
+    abstract class WhenParseAllFirstAndSingle {
+        @Test void whenParseAll() {
+            Stream stream = Parser.parseAll(input);
+            verifyParseAll(stream);
+        }
 
-    private Document whenParseFirst() { return Parser.parseFirst(input); }
+        protected abstract void verifyParseAll(Stream stream);
 
-    private Document whenParseSingle() { return Parser.parseSingle(input); }
 
-    private ParseException whenParseSingleThrows() { return whenThrows(this::whenParseSingle); }
+        @Test void whenParseFirst() {
+            ParseException thrown = catchThrowableOfType(() -> {
+                Document document = Parser.parseFirst(input);
 
-    private ParseException whenParseFirstThrows() { return whenThrows(this::whenParseFirst); }
+                verifyParseFirst(document);
+            }, ParseException.class);
 
-    private ParseException whenThrows(ThrowingCallable callable) { return catchThrowableOfType(callable, ParseException.class); }
+            if (thrown != null)
+                verifyParseFirstException(thrown);
+        }
+
+        protected void verifyParseFirst(Document document) {
+            fail("expected exception was not thrown. see the verifyParseFirstException method for details");
+        }
+
+        protected void verifyParseFirstException(ParseException thrown) {
+            fail("unexpected exception. see verifyParseFirst for what was expected", thrown);
+        }
+
+
+        @Test void whenParseSingle() {
+            ParseException thrown = catchThrowableOfType(() -> {
+                Document document = Parser.parseSingle(input);
+
+                verifyParseSingle(document);
+            }, ParseException.class);
+
+            if (thrown != null)
+                verifyParseSingleException(thrown);
+        }
+
+        protected void verifyParseSingle(Document document) {
+            fail("expected exception was not thrown. see the verifyParseSingleException method for details");
+        }
+
+        protected void verifyParseSingleException(ParseException thrown) {
+            fail("unexpected exception. see verifyParseSingle for what was expected", thrown);
+        }
+    }
 
 
     ///////////////////////////////////////////////////////////////////////// THEN
