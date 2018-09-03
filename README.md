@@ -51,7 +51,7 @@ Following the BDD `given-when-then` schema and using AssertJ, the tests will loo
 ```java
 class ParserTest { 
     @Test void shouldParseSingleInDocumentOnly() {
-        input = "# test comment";
+        String input = "# test comment";
 
         Document document = Parser.parseSingle(input);
 
@@ -126,7 +126,7 @@ Extracting them to separate source files is possible, but then you'd have to
 a) share a lot of `when...` and `then...` methods, and
 b) use packages to create a sub structure.
 Instead, you can surround all tests that call, e.g., `givenTwoCommentOnlyDocuments()` with an inner class `GivenTwoCommentOnlyDocuments`,
-but to have JUnit still invoke the tests, we'll have add a `@Nested` annotation:
+but to have JUnit still invoke the tests, we'll have to add a `@Nested` annotation:
 
 ```java
 @Nested class GivenOneCommentOnlyDocument {
@@ -179,7 +179,7 @@ We could have a little bit less code (which is generally a good thing) by using 
 But I prefer methods to have names that say what they do, and as you can see in the first variant, setup methods are no exception.
 I sometimes even have several `@BeforeEach` methods in a single class, when they do separate setup work.
 This gives me the advantage that I don't have to read the method body to understand what it does,
-and when some setup doesn't work as expected, I can start by looking at the method that is responsible for that.
+and when some setup doesn't work as expected, I can start by looking directly at the method that is responsible for that.
 
 Now the test method names still describe the setup they run in, i.e. the `InDocumentOnly` part in `shouldParseSingleInDocumentOnly`.
 In the code structure as well as in the output provided by the JUnit runner, this is redundant, so we should remove it: `shouldParseSingle`.
@@ -187,11 +187,8 @@ The JUnit runner now looks like this:
 
 ![grouped-test-run](img/grouped-test-run.png)
 
-When I group some `Given...` classes, I often add `Given...` classes for all setups, even when they contain only a single test,
-just to make things symmetrical.
-
-Sometimes tests share only part of the setup of another test.
-You can extract the common setup and add the local setup in the test;
+Most real world tests share only part of the setup with other tests.
+You can extract the common setup and simply add the specific setup in each test;
 just make sure to express that additional setup step in the name of the test, or you may oversee it.
 When things get more complex, it's probably better to nest several layers of `Given...` classes,
 even for `Given...` classes with only one test, just to make all setup steps visible at one place, the class names,
@@ -205,7 +202,7 @@ these three also call exactly the same `when...` methods; they only differ in th
 
 We can extract an abstract class `WhenParseAllFirstAndSingle` to contain the three test methods,
 that delegate to abstract methods for the verification.
-As the `when...` methods are not reused any more and the test methods have the same level of abstraction, we can inline them.
+As the `when...` methods are not reused any more and the test methods have the same level of abstraction, we can also inline these.
 
 ```java
 abstract class WhenParseAllFirstAndSingle {
@@ -219,10 +216,10 @@ abstract class WhenParseAllFirstAndSingle {
 ```
 
 The verification is done in the implementations, so we can't say something like `thenIsEmpty`, we'll need a generic name.
-`thenParseAll` would be misleading, so `verify` with the method called is a good name, e.g. `verifyParseFirst`.
+`thenParseAll` would be misleading, so `verify` with the method called is a good name, e.g. `verifyParseAll`.
 
-This extraction works fine for `parseAll`, as the call that never fails,
-but, e.g., `parseSingle` throws an exception, when there is more than one document.
+This extraction works fine for `parseAll`, as the call never fails,
+but, e.g., `parseSingle` throws an exception when there is more than one document.
 So the `whenParseSingle` test has to delegate the exception for verification, too.
 
 Let's introduce a second `verifyParseSingleException` method for that check.
@@ -305,7 +302,7 @@ abstract class WhenParseAllFirstAndSingle {
 ```
 
 In this way, even when a test that expects a result throws an exception or vice versa, the error message is nice and helpful,
-e.g. when `GivenEmptyDocument.whenParseSingle` would expect `thenIsEmptyDocument`, the exception would be (stacktraces omitted):
+e.g. when `GivenEmptyDocument.whenParseSingle`, which throws an exception, would expect `thenIsEmptyDocument`, the exception would be (stacktraces omitted):
 
 ```
 AssertionError: unexpected exception. see verifyParseSingle for what was expected
@@ -337,7 +334,7 @@ And the tests themselves look nice, too:
 ## Multiple `When...` Classes
 
 If you need more than one set of `when...` test methods, you can change the `When...` class to an interface with default methods.
-We also have to change the fields we use to pass test setup objects (the `input` String in this case) to the `When...` class to be static,
+We also have to change the fields we use to pass test setup objects to the `When...` class (the `input` String in this case) to be static,
 as interfaces can't access non-static fields.
 This looks like a simple change, but it can cause nasty bugs: You now have to set these fields for every test, or you may inherit them
 from tests that ran before, i.e. your tests depend on the execution order, which can bend your mind when you try to debug it.
@@ -423,7 +420,7 @@ Or you can add the `thenToStringEqualsInput` to all overloaded `verifyParseFirst
 }
 ```
 
-Both options have drawbacks: The first hinders you from a reusable `whenVerify`, while the latter adds duplication and makes it easy to forget.
+Both options have drawbacks: The first hinders `whenVerify` from being reusable, while the latter adds duplication and makes it easy to forget.
 The other options I have tried out were even worse.
 Over all, probably the first option is the best one, it means the `when...` methods share that extra complexity, but that is quite stable.
 
@@ -436,3 +433,6 @@ Pass the objects that are set up and then used in your `when...` method in field
 
 When there are sets of tests that should be executed in several setups, extract them to a super class,
 or if you need more than one such set in one setup, to an interface (and make the setup fields static).
+
+I hope this helps you to reap the benefits JUnit 5 provides.
+I'd be glad to hear it, when you have any feedback, probably best as an issue on GitHub.
