@@ -15,6 +15,9 @@ class _6_MoreWhenTest {
 
     private static String input;
 
+    @BeforeEach void setup() {
+        input = null;
+    }
 
     ///////////////////////////////////////////////////////////////////////// GIVEN
 
@@ -91,6 +94,10 @@ class _6_MoreWhenTest {
 
         @Override public void verifyParseFirst(Document document) {
             thenIsCommentOnlyDocument(document);
+        }
+
+        @Override public void thenToStringEqualsInput(Document document) {
+            assertThat(document).hasToString("# test comment"); // only first
         }
 
         @Override public void verifyParseSingleException(ParseException thrown) {

@@ -2,7 +2,7 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.t1</groupId>
-    <artifactId>junit-5-tests</artifactId>
+    <artifactId>junit-5-structure-demo</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>JUnit 5 Tests</name>

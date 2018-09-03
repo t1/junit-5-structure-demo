@@ -13,22 +13,25 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 class _8_ExperimentalTest {
     ///////////////////////////////////// inputs
     private static String input;
-    private static Document expected;
-    private static Document expected2;
 
     ///////////////////////////////////// outputs
     private static Stream stream;
     private static Document document;
     private static ParseException thrown;
 
+    ///////////////////////////////////// expectations
+    private static Document expected;
+    private static Document expected2;
+
     @BeforeEach void setup() {
         input = null;
-        expected = null;
-        expected2 = null;
 
         stream = null;
         document = null;
         thrown = null;
+
+        expected = null;
+        expected2 = null;
     }
 
 

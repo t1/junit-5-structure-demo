@@ -190,6 +190,13 @@ The JUnit runner now looks like this:
 When I group some `Given...` classes, I often add `Given...` classes for all setups, even when they contain only a single test,
 just to make things symmetrical.
 
+Sometimes tests share only part of the setup of another test.
+You can extract the common setup and add the local setup in the test;
+just make sure to express that additional setup step in the name of the test, or you may oversee it.
+When things get more complex, it's probably better to nest several layers of `Given...` classes,
+even for `Given...` classes with only one test, just to make all setup steps visible at one place, the class names,
+and not some in the class names and some in the method names (which is easier to forget).
+
 
 ## Extracting `when...`
 
@@ -332,6 +339,21 @@ And the tests themselves look nice, too:
 If you need more than one set of `when...` test methods, you can change the `When...` class to an interface with default methods.
 We also have to change the fields we use to pass test setup objects (the `input` String in this case) to the `When...` class to be static,
 as interfaces can't access non-static fields.
+This looks like a simple change, but it can cause nasty bugs: You now have to set these fields for every test, or you may inherit them
+from tests that ran before, i.e. your tests depend on the execution order, which can bend your mind when you try to debug it.
+So be extra careful, here. It's probably worth resetting it to `null` in a top level `@BeforeEach`:
+
+```java
+class ParserTest {
+    private static String input;
+
+    @BeforeEach void setup() {
+        input = null;
+    }
+}
+```
+
+The top level `@BeforeEach` are executed before the nested ones.
 
 Otherwise, the change is straight forward:
 
@@ -402,7 +424,8 @@ Or you can add the `thenToStringEqualsInput` to all overloaded `verifyParseFirst
 ```
 
 Both options have drawbacks: The first hinders you from a reusable `whenVerify`, while the latter adds duplication and makes it easy to forget.
-Probably the first option is better over all.
+The other options I have tried out were even worse.
+Over all, probably the first option is the best one, it means the `when...` methods share that extra complexity, but that is quite stable.
 
 
 ## tl;dr
