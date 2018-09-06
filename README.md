@@ -3,18 +3,21 @@
 Automated tests are critical for any reasonable software project.
 Some even say that tests are more important than the production code,
 because it's easier to recreate the production code from the tests than the other way around.
-Anyway, as they are such important assets, it's necessary to keep them clean:
-Adding new tests is something you'll be doing every day, but this must not be write-only;
-when you refactor the production code, changes to the test code should be kept to a minimum.
-So you'll have to reduce duplication to a minimum also in your test code.
-This is not so easy, when you mainly think about adding new tests.
-And most of the problems only show up when the code base gets big... and then it's often too late.
-Having guidelines can help, if the team really understands the reasoning and doesn't follow them blindly.
+Anyway, as they are such important assets, it's necessary to keep them clean.
 
-JUnit 5 gives us some opportunities to improve our tests, and I'll show you some techniques here.
-Any examples are necessarily simplified, as they can't have the full complexity of a real system,
-so bear with me while I try to contrive examples with enough complexity to show the effects,
-and I'm going to challenge your fantasy that some things, while they are just over engineered at this scale,
+Adding new tests is something you'll be doing every day, but hold yourself from getting into a write-only mode:
+Its overwhelmingly tempting to simply duplicate an existing test and just change some details for the new test.
+But when you refactor the production code, you often have to change some test code, too.
+If this is spilled all over your tests, you will have a hard time;
+and what's worse, you will be tempted to not do the refactoring or even stop writing tests.
+So also in your test code you'll have to reduce code duplication to a minimum from the very beginning.
+It's so little extra work to do now, when you're into the subject, that it will amortize in no time.
+
+JUnit 5 gives us some opportunities to do this even better, and I'll show you some techniques here.
+
+Any examples I can come up with are necessarily simplified, as they can't have the full complexity of a real system.
+So bear with me while I try to contrive examples with enough complexity to show the effects.
+And I'm going to challenge your fantasy that some things, while they are just over engineered at this scale,
 will prove useful when things get bigger.
 
 If you like, you can follow the refactorings done here by looking at the tests
@@ -39,12 +42,11 @@ public class Parser {
 }
 ```
 
-We write tests for four input files:
+We write tests for four input files (not to make things too complex):
 One is empty,
-one contains a document with only one blank,
+one contains a document with only one space character,
 one contains a single document containing only a comment,
-and one contains two documents with each only containing a comment
-(not to make things too complex).
+and one contains two documents with each only containing a comment.
 That makes a total of 12 tests.
 Following the BDD `given-when-then` schema and using AssertJ, the tests will look somewhat like this:
 
@@ -60,7 +62,7 @@ class ParserTest {
 }
 ```
 
-To reduce duplicated code, we extract all three phases into methods, so we can reuse them in the other tests:
+To reduce duplicated code, we extract the `given` and `when` into methods, so we can reuse them in the other tests:
 
 ```java
 class ParserTest {
@@ -69,7 +71,7 @@ class ParserTest {
 
         Document document = whenParseSingle(input);
 
-        thenIsCommentOnlyDocument(document);
+        assertThat(document).isEqualTo(COMMENT_ONLY_DOCUMENT);
     }
 }
 ```
@@ -83,14 +85,27 @@ class ParserTest {
 
         ParseException thrown = whenParseSingleThrows(input);
 
-        thenExpectedExactlyOneButFoundNone(thrown);
+        assertThat(thrown).hasMessage("expected exactly one document, but found 0");
     }
 }
 ```
 
-These `given...` methods all return an `input` String, while all `when...` methods take that string as an argument.
+The `given...` methods are called three times each, once for every parser method.
+The `when...` methods are called four times each, once for every input document; this is only reduced by the tests that expect exceptions.
+There is not so much reuse in the `then...` methods.
+
+But reuse is not the most important reason to extract a method.
+It's more about hiding complexity and staying at a single level of abstraction.
+As always, you'll have to find the right balance:
+Is `whenParseSingle(input)` better than `Parser.parseSingle(input)`?
+It's so simple and unlikely that you will ever have to change it by hand, that it's probably better to *not* extract it.
+If you want to go into more detail, read the Clean Code book by Robert C. Martin, it's worth it!
+
+Here, we extract these methods mainly to prepare the next step.
+
+Note that the `given...` methods all return an `input` String, while all `when...` methods take that string as an argument.
 When tests get more complex, they produce or require more than one object, so you'll have to pass them via field.
-Let's do that here, too:
+Also as a preparation for the next step, let's do that here, too:
 
 ```java
 class ParserTest {
@@ -109,38 +124,33 @@ class ParserTest {
 
         Stream stream = whenParseAll();
 
-        thenIsEmpty(stream);
+        assertThat(stream.documents()).isEmpty();
     }
 }
 ``` 
-
-Let me repeat: I don't claim it to be a best practice to extract everything into methods like this.
-I do it here only to stress the points I want to make later.
-Normally I would extract such methods only, when they provide a better level of abstraction (i.e. they have a _very_ good name).
 
 
 ## Adding Structure
 
 It would be nice to group all tests with the same input together, so it's easier to find them in a larger test base.
-Extracting them to separate source files is possible, but then you'd have to
-a) share a lot of `when...` and `then...` methods, and
-b) use packages to create a sub structure.
-Instead, you can surround all tests that call, e.g., `givenTwoCommentOnlyDocuments()` with an inner class `GivenTwoCommentOnlyDocuments`,
-but to have JUnit still invoke the tests, we'll have to add a `@Nested` annotation:
+You can surround all tests that call, e.g., `givenTwoCommentOnlyDocuments()` with an inner class `GivenTwoCommentOnlyDocuments`.
+To have JUnit still invoke the tests, we'll have to add a `@Nested` annotation:
 
 ```java
-@Nested class GivenOneCommentOnlyDocument {
-    @Test void shouldParseAllInDocumentOnly() {
-        givenOneCommentOnlyDocument();
-
-        Stream stream = whenParseAll();
-
-        thenHasOneCommentOnlyDocument(stream);
+class ParserTest {
+    @Nested class GivenOneCommentOnlyDocument {
+        @Test void shouldParseAllInDocumentOnly() {
+            givenOneCommentOnlyDocument();
+    
+            Stream stream = whenParseAll();
+    
+            thenHasOneCommentOnlyDocument(stream);
+        }
     }
 }
 ```
 
-JUnit now runs the tests as a nested group, so we can see the test structure like this:
+In contrast to having separate top-level test classes, JUnit runs these tests as nested groups, so we see the test run structured like this:
 
 ![structured-test-run](img/structured-test-run.png)
 
@@ -189,7 +199,7 @@ The JUnit runner now looks like this:
 
 Most real world tests share only part of the setup with other tests.
 You can extract the common setup and simply add the specific setup in each test;
-just make sure to express that additional setup step in the name of the test, or you may oversee it.
+just make sure to express that additional setup step in the name of the test, or you may overlook it.
 When things get more complex, it's probably better to nest several layers of `Given...` classes,
 even for `Given...` classes with only one test, just to make all setup steps visible at one place, the class names,
 and not some in the class names and some in the method names (which is easier to forget).
@@ -409,7 +419,7 @@ interface WhenParseAllFirstAndSingle {
 }
 ```
 
-Or you can add the `thenToStringEqualsInput` to all overloaded `verifyParseFirst` methods:
+Or you can add the `thenToStringEqualsInput` to all overridden `verifyParseFirst` methods:
 
 ```java
 @Nested class GivenSpaceOnlyDocument implements WhenParseAllFirstAndSingle {

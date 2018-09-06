@@ -1,4 +1,3 @@
-import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,11 +28,9 @@ class _0_ClassicTest {
 
     private Document whenParseSingle() { return Parser.parseSingle(input); }
 
-    private ParseException whenParseSingleThrows() { return whenThrows(this::whenParseSingle); }
+    private ParseException whenParseSingleThrows() { return catchThrowableOfType(this::whenParseSingle, ParseException.class); }
 
-    private ParseException whenParseFirstThrows() { return whenThrows(this::whenParseFirst); }
-
-    private ParseException whenThrows(ThrowingCallable callable) { return catchThrowableOfType(callable, ParseException.class); }
+    private ParseException whenParseFirstThrows() { return catchThrowableOfType(this::whenParseFirst, ParseException.class); }
 
 
     ///////////////////////////////////////////////////////////////////////// THEN
@@ -42,42 +39,6 @@ class _0_ClassicTest {
     private static final Document COMMENT_ONLY = new Document().comment(new Comment().text("test comment"));
     private static final Document COMMENT_ONLY_2 = new Document().comment(new Comment().text("test comment 2"));
 
-
-    private void thenIsEmpty(Stream stream) { assertThat(stream.documents()).isEmpty(); }
-
-    private void thenExpectedAtLeastOne(ParseException thrown) {
-        assertThat(thrown).hasMessage("expected at least one document, but found none");
-    }
-
-    private void thenExpectedExactlyOneButFoundNone(ParseException thrown) {
-        assertThat(thrown).hasMessage("expected exactly one document, but found 0");
-    }
-
-    private void thenExpectedExactlyOneButFoundTwo(ParseException thrown) {
-        assertThat(thrown).hasMessage("expected exactly one document, but found 2");
-    }
-
-    private void thenHasOneEmptyDocument(Stream stream) {
-        assertThat(stream.documents()).containsExactly(EMPTY_DOCUMENT);
-    }
-
-    private void thenIsEmptyDocument(Document document) {
-        assertThat(document).isEqualTo(EMPTY_DOCUMENT);
-    }
-
-    private void thenHasOneCommentOnlyDocument(Stream stream) {
-        assertThat(stream.documents()).containsExactly(COMMENT_ONLY);
-    }
-
-    private void thenIsCommentOnlyDocument(Document document) {
-        assertThat(document).isEqualTo(COMMENT_ONLY);
-    }
-
-    private void thenHasTwoCommentOnlyDocuments(Stream stream) {
-        assertThat(stream.documents()).containsExactly(COMMENT_ONLY, COMMENT_ONLY_2);
-    }
-
-
     ///////////////////////////////////////////////////////////////////////// TESTS
 
     @Test void shouldParseAllInEmptyDocument() {
@@ -85,7 +46,7 @@ class _0_ClassicTest {
 
         Stream stream = whenParseAll();
 
-        thenIsEmpty(stream);
+        assertThat(stream.documents()).isEmpty();
     }
 
     @Test void shouldParseFirstInEmptyDocument() {
@@ -93,7 +54,7 @@ class _0_ClassicTest {
 
         ParseException thrown = whenParseFirstThrows();
 
-        thenExpectedAtLeastOne(thrown);
+        assertThat(thrown).hasMessage("expected at least one document, but found none");
     }
 
     @Test void shouldParseSingleInEmptyDocument() {
@@ -101,7 +62,7 @@ class _0_ClassicTest {
 
         ParseException thrown = whenParseSingleThrows();
 
-        thenExpectedExactlyOneButFoundNone(thrown);
+        assertThat(thrown).hasMessage("expected exactly one document, but found 0");
     }
 
 
@@ -110,7 +71,7 @@ class _0_ClassicTest {
 
         Stream stream = whenParseAll();
 
-        thenHasOneEmptyDocument(stream);
+        assertThat(stream.documents()).containsExactly(EMPTY_DOCUMENT);
     }
 
     @Test void shouldParseFirstInSpaceOnlyDocument() {
@@ -118,7 +79,7 @@ class _0_ClassicTest {
 
         Document document = whenParseFirst();
 
-        thenIsEmptyDocument(document);
+        assertThat(document).isEqualTo(EMPTY_DOCUMENT);
     }
 
     @Test void shouldParseSingleInSpaceOnlyDocument() {
@@ -126,7 +87,7 @@ class _0_ClassicTest {
 
         Document document = whenParseSingle();
 
-        thenIsEmptyDocument(document);
+        assertThat(document).isEqualTo(EMPTY_DOCUMENT);
     }
 
 
@@ -135,7 +96,7 @@ class _0_ClassicTest {
 
         Stream stream = whenParseAll();
 
-        thenHasOneCommentOnlyDocument(stream);
+        assertThat(stream.documents()).containsExactly(COMMENT_ONLY);
     }
 
     @Test void shouldParseFirstInDocumentOnlyDocument() {
@@ -143,7 +104,7 @@ class _0_ClassicTest {
 
         Document document = whenParseFirst();
 
-        thenIsCommentOnlyDocument(document);
+        assertThat(document).isEqualTo(COMMENT_ONLY);
     }
 
     @Test void shouldParseSingleInDocumentOnlyDocument() {
@@ -151,7 +112,7 @@ class _0_ClassicTest {
 
         Document document = whenParseSingle();
 
-        thenIsCommentOnlyDocument(document);
+        assertThat(document).isEqualTo(COMMENT_ONLY);
     }
 
 
@@ -160,7 +121,7 @@ class _0_ClassicTest {
 
         Stream stream = whenParseAll();
 
-        thenHasTwoCommentOnlyDocuments(stream);
+        assertThat(stream.documents()).containsExactly(COMMENT_ONLY, COMMENT_ONLY_2);
     }
 
     @Test void shouldParseFirstInTwoDocuments() {
@@ -168,7 +129,7 @@ class _0_ClassicTest {
 
         Document document = whenParseFirst();
 
-        thenIsCommentOnlyDocument(document);
+        assertThat(document).isEqualTo(COMMENT_ONLY);
     }
 
     @Test void shouldFailToParseSingleInTwoDocuments() {
@@ -176,6 +137,6 @@ class _0_ClassicTest {
 
         ParseException thrown = whenParseSingleThrows();
 
-        thenExpectedExactlyOneButFoundTwo(thrown);
+        assertThat(thrown).hasMessage("expected exactly one document, but found 2");
     }
 }

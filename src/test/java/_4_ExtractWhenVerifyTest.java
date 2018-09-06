@@ -25,15 +25,15 @@ class _4_ExtractWhenVerifyTest {
         }
 
         @Override protected void verifyParseAll(Stream stream) {
-            thenIsEmpty(stream);
+            assertThat(stream.documents()).isEmpty();
         }
 
         @Override protected void verifyParseFirstException(ParseException thrown) {
-            thenExpectedAtLeastOne(thrown);
+            assertThat(thrown).hasMessage("expected at least one document, but found none");
         }
 
         @Override protected void verifyParseSingleException(ParseException thrown) {
-            thenExpectedExactlyOneButFoundNone(thrown);
+            assertThat(thrown).hasMessage("expected exactly one document, but found 0");
         }
     }
 
@@ -45,15 +45,15 @@ class _4_ExtractWhenVerifyTest {
         }
 
         @Override protected void verifyParseAll(Stream stream) {
-            thenHasOneEmptyDocument(stream);
+            assertThat(stream.documents()).containsExactly(EMPTY_DOCUMENT);
         }
 
         @Override protected void verifyParseFirst(Document document) {
-            thenIsEmptyDocument(document);
+            assertThat(document).isEqualTo(EMPTY_DOCUMENT);
         }
 
         @Override protected void verifyParseSingle(Document document) {
-            thenIsEmptyDocument(document);
+            assertThat(document).isEqualTo(EMPTY_DOCUMENT);
         }
     }
 
@@ -65,15 +65,15 @@ class _4_ExtractWhenVerifyTest {
         }
 
         @Override protected void verifyParseAll(Stream stream) {
-            thenHasOneCommentOnlyDocument(stream);
+            assertThat(stream.documents()).containsExactly(COMMENT_ONLY);
         }
 
         @Override protected void verifyParseFirst(Document document) {
-            thenIsCommentOnlyDocument(document);
+            assertThat(document).isEqualTo(COMMENT_ONLY);
         }
 
         @Override protected void verifyParseSingle(Document document) {
-            thenIsCommentOnlyDocument(document);
+            assertThat(document).isEqualTo(COMMENT_ONLY);
         }
     }
 
@@ -84,15 +84,15 @@ class _4_ExtractWhenVerifyTest {
         }
 
         @Override protected void verifyParseAll(Stream stream) {
-            thenHasTwoCommentOnlyDocuments(stream);
+            assertThat(stream.documents()).containsExactly(COMMENT_ONLY, COMMENT_ONLY_2);
         }
 
         @Override protected void verifyParseFirst(Document document) {
-            thenIsCommentOnlyDocument(document);
+            assertThat(document).isEqualTo(COMMENT_ONLY);
         }
 
         @Override protected void verifyParseSingleException(ParseException thrown) {
-            thenExpectedExactlyOneButFoundTwo(thrown);
+            assertThat(thrown).hasMessage("expected exactly one document, but found 2");
         }
     }
 
@@ -150,39 +150,4 @@ class _4_ExtractWhenVerifyTest {
     private static final Document EMPTY_DOCUMENT = new Document().content(" ");
     private static final Document COMMENT_ONLY = new Document().comment(new Comment().text("test comment"));
     private static final Document COMMENT_ONLY_2 = new Document().comment(new Comment().text("test comment 2"));
-
-
-    private void thenIsEmpty(Stream stream) { assertThat(stream.documents()).isEmpty(); }
-
-    private void thenExpectedAtLeastOne(ParseException thrown) {
-        assertThat(thrown).hasMessage("expected at least one document, but found none");
-    }
-
-    private void thenExpectedExactlyOneButFoundNone(ParseException thrown) {
-        assertThat(thrown).hasMessage("expected exactly one document, but found 0");
-    }
-
-    private void thenExpectedExactlyOneButFoundTwo(ParseException thrown) {
-        assertThat(thrown).hasMessage("expected exactly one document, but found 2");
-    }
-
-    private void thenHasOneEmptyDocument(Stream stream) {
-        assertThat(stream.documents()).containsExactly(EMPTY_DOCUMENT);
-    }
-
-    private void thenIsEmptyDocument(Document document) {
-        assertThat(document).isEqualTo(EMPTY_DOCUMENT);
-    }
-
-    private void thenHasOneCommentOnlyDocument(Stream stream) {
-        assertThat(stream.documents()).containsExactly(COMMENT_ONLY);
-    }
-
-    private void thenIsCommentOnlyDocument(Document document) {
-        assertThat(document).isEqualTo(COMMENT_ONLY);
-    }
-
-    private void thenHasTwoCommentOnlyDocuments(Stream stream) {
-        assertThat(stream.documents()).containsExactly(COMMENT_ONLY, COMMENT_ONLY_2);
-    }
 }
