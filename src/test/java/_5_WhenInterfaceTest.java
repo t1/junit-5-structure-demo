@@ -134,6 +134,18 @@ class _5_WhenInterfaceTest {
         }
     }
 
+    /**
+     * Calls the <code>call</code> and verifies the outcome.
+     * If it succeeds, it calls <code>verify</code>.
+     * If it fails with an exception of type <code>exceptionClass</code>, it calls <code>verifyException</code>.
+     *
+     * @param call The `when` part to invoke on the system under test
+     * @param exceptionClass The type of exception that may be expected
+     * @param verify The `then` part to check a successful outcome
+     * @param verifyException The `then` part to check an expected exception
+     * @param <T> The type of the result of the `call`
+     * @param <E> The type of the expected exception
+     */
     public static <T, E extends Throwable> void whenVerify(Supplier<T> call, Class<E> exceptionClass, Consumer<T> verify, Consumer<E> verifyException) {
         AtomicReference<T> success = new AtomicReference<>();
         E failure = catchThrowableOfType(() -> success.set(call.get()), exceptionClass);

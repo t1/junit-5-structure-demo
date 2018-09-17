@@ -2,13 +2,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.assertj.core.api.Assertions.fail;
+import static util.WhenParseBuilder.when;
 
 class _6_MoreWhenTest {
 
@@ -57,7 +53,6 @@ class _6_MoreWhenTest {
 
         @Override public void verifyParseSingle(Document document) {
             assertThat(document).isEqualTo(EMPTY_DOCUMENT);
-            thenToStringEqualsInput(document);
         }
     }
 
@@ -78,7 +73,6 @@ class _6_MoreWhenTest {
 
         @Override public void verifyParseSingle(Document document) {
             assertThat(document).isEqualTo(COMMENT_ONLY);
-            thenToStringEqualsInput(document);
         }
     }
 
@@ -96,7 +90,7 @@ class _6_MoreWhenTest {
             assertThat(document).isEqualTo(COMMENT_ONLY);
         }
 
-        @Override public void thenToStringEqualsInput(Document document) {
+        @Override public void verifyToStringEqualsInput(Document document) {
             assertThat(document).hasToString("# test comment"); // only first
         }
 
@@ -111,28 +105,26 @@ class _6_MoreWhenTest {
     interface WhenParseAllFirstAndSingle {
         @Test default void whenParseAll() {
             Stream stream = Parser.parseAll(input);
+
             verifyParseAll(stream);
-            thenToStringEqualsInput(stream);
+            verifyToStringEqualsInput(stream);
         }
 
         void verifyParseAll(Stream stream);
 
-        default void thenToStringEqualsInput(Stream stream) {
+        default void verifyToStringEqualsInput(Stream stream) {
             assertThat(stream).hasToString(input);
         }
 
 
         @Test default void whenParseFirst() {
-            AtomicReference<Document> success = new AtomicReference<>();
-            ParseException failure = catchThrowableOfType(() -> success.set(Parser.parseFirst(input)), ParseException.class);
-
-            if (failure != null)
-                verifyParseFirstException(failure);
-            else {
-                Document document = success.get();
+            when(() -> Parser.parseFirst(input))
+                .failsWith(ParseException.class).then(this::verifyParseFirstException)
+                .succeeds().then(document ->
+            {
+                verifyToStringEqualsInput(document);
                 verifyParseFirst(document);
-                thenToStringEqualsInput(document);
-            }
+            });
         }
 
         default void verifyParseFirst(Document document) {
@@ -143,13 +135,19 @@ class _6_MoreWhenTest {
             fail("unexpected exception. see verifyParseFirst for what was expected", thrown);
         }
 
-        default void thenToStringEqualsInput(Document document) {
+        default void verifyToStringEqualsInput(Document document) {
             assertThat(document).hasToString(input);
         }
 
 
         @Test default void whenParseSingle() {
-            whenVerify(() -> Parser.parseSingle(input), ParseException.class, this::verifyParseSingle, this::verifyParseSingleException);
+            when(() -> Parser.parseSingle(input))
+                .failsWith(ParseException.class).then(this::verifyParseSingleException)
+                .succeeds().then(document ->
+            {
+                verifyParseSingle(document);
+                verifyToStringEqualsInput(document);
+            });
         }
 
         default void verifyParseSingle(Document document) {
@@ -159,16 +157,6 @@ class _6_MoreWhenTest {
         default void verifyParseSingleException(ParseException thrown) {
             fail("unexpected exception. see verifyParseSingle for what was expected", thrown);
         }
-    }
-
-    public static <T, E extends Throwable> void whenVerify(Supplier<T> call, Class<E> exceptionClass, Consumer<T> verify, Consumer<E> verifyException) {
-        AtomicReference<T> success = new AtomicReference<>();
-        E failure = catchThrowableOfType(() -> success.set(call.get()), exceptionClass);
-
-        if (failure != null)
-            verifyException.accept(failure);
-        else
-            verify.accept(success.get());
     }
 
 

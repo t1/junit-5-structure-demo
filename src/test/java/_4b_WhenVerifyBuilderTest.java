@@ -2,15 +2,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.assertj.core.api.Assertions.fail;
+import static util.WhenParseBuilder.when;
 
-class _4_ExtractWhenVerifyTest {
+class _4b_WhenVerifyBuilderTest {
 
 
     private String input;
@@ -109,7 +105,9 @@ class _4_ExtractWhenVerifyTest {
 
 
         @Test void whenParseFirst() {
-            whenVerify(() -> Parser.parseFirst(input), ParseException.class, this::verifyParseFirst, this::verifyParseFirstException);
+            when(() -> Parser.parseFirst(input))
+                .failsWith(ParseException.class).then(this::verifyParseFirstException)
+                .succeeds().then(this::verifyParseFirst);
         }
 
         protected void verifyParseFirst(Document document) {
@@ -122,7 +120,9 @@ class _4_ExtractWhenVerifyTest {
 
 
         @Test void whenParseSingle() {
-            whenVerify(() -> Parser.parseSingle(input), ParseException.class, this::verifyParseSingle, this::verifyParseSingleException);
+            when(() -> Parser.parseSingle(input))
+                .failsWith(ParseException.class).then(this::verifyParseSingleException)
+                .succeeds().then(this::verifyParseSingle);
         }
 
         protected void verifyParseSingle(Document document) {
@@ -133,29 +133,6 @@ class _4_ExtractWhenVerifyTest {
             fail("unexpected exception. see verifyParseSingle for what was expected", thrown);
         }
     }
-
-    /**
-     * Calls the <code>call</code> and verifies the outcome.
-     * If it succeeds, it calls <code>verify</code>.
-     * If it fails with an exception of type <code>exceptionClass</code>, it calls <code>verifyException</code>.
-     *
-     * @param call The `when` part to invoke on the system under test
-     * @param exceptionClass The type of exception that may be expected
-     * @param verify The `then` part to check a successful outcome
-     * @param verifyException The `then` part to check an expected exception
-     * @param <T> The type of the result of the `call`
-     * @param <E> The type of the expected exception
-     */
-    public static <T, E extends Throwable> void whenVerify(Supplier<T> call, Class<E> exceptionClass, Consumer<T> verify, Consumer<E> verifyException) {
-        AtomicReference<T> success = new AtomicReference<>();
-        E failure = catchThrowableOfType(() -> success.set(call.get()), exceptionClass);
-
-        if (failure != null)
-            verifyException.accept(failure);
-        else
-            verify.accept(success.get());
-    }
-
 
     ///////////////////////////////////////////////////////////////////////// THEN
 
