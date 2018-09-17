@@ -1,9 +1,9 @@
 # Structured JUnit 5 Testing
 
-Automated tests are critical for any reasonable software project.
-Some even say that tests are more important than the production code,
+Automated tests are critical to any reasonable software project.
+Some even say that test code is more important than production code,
 because it's easier to recreate the production code from the tests than the other way around.
-Anyway, as they are such important assets, it's necessary to keep them clean.
+Anyway, they are valuable assets, so it's necessary to keep them clean.
 
 Adding new tests is something you'll be doing every day, but hold yourself from getting into a write-only mode:
 Its overwhelmingly tempting to simply duplicate an existing test method and change just some details for the new test.
