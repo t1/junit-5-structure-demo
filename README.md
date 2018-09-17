@@ -31,10 +31,18 @@ Let's take a parser for a stream of documents (like in YAML) as an example. It h
 
 ```java
 public class Parser {
-    /** Parse the one and only document in the input; it's an error if there is none or more than one. */
+    /**
+     * Parse the one and only document in the input.
+     * 
+     * @throws ParseException if there is none or more than one.
+     */
     public static Document parseSingle(String input);
 
-    /** Parse only the first document in the input; it's an error if there is none. */
+    /**
+    * Parse only the first document in the input.
+     * 
+     * @throws ParseException if there is none.
+     */
     public static Document parseFirst(String input);
 
     /** Parse the list of documents in the input; may be empty, too. */
@@ -50,7 +58,7 @@ and one contains two documents with each only containing a comment.
 That makes a total of 12 tests looking similar to this one:
 
 ```java
-class ParserTest { 
+class ParserTest {
     @Test void shouldParseSingleInDocumentOnly() {
         String input = "# test comment";
 
@@ -64,8 +72,8 @@ class ParserTest {
 Following the BDD `given-when-then` schema I first have a test setup part (given),
 then an invocation of the system under test (when),
 and finally a verification of the outcome (then).
-These three parts are delimited with empty lines, and there's no repetition or anything else.
-For the verification I use AssertJ.
+These three parts are delimited with empty lines.
+For the verification I use [AssertJ](https://joel-costigliola.github.io/assertj/index.html).
 
 To reduce duplication, we extract the `given` and `when` parts into methods:
 
@@ -96,10 +104,10 @@ class ParserTest {
 ```
 
 The `given...` methods are called three times each, once for every parser method.
-The `when...` methods are called four times each, once for every input document;
+The `when...` methods are called four times each, once for every input document,
 minus the cases where the tests expect exceptions.
 There is actually not so much reuse for the `then...` methods;
-we only extract some constants for the expected documents here.
+we only extract some constants for the expected documents here, e.g. `COMMENT_ONLY`.
 
 But reuse is not the most important reason to extract a method.
 It's more about hiding complexity and staying at a single level of abstraction.
@@ -110,7 +118,7 @@ If you want to go into more detail, read the Clean Code book by Robert C. Martin
 
 As stated in the introduction, we extract these methods here only to prepare for the next step.
 
-Note that the `given...` methods all return an `input` String, while all `when...` methods take that string as an argument.
+You can see that the `given...` methods all return an `input` String, while all `when...` methods take that string as an argument.
 When tests get more complex, they produce or require more than one object, so you'll have to pass them via field.
 But normally I wouldn't do this in such a simple case.
 Let's do that here anyway, again as a preparation for the next step:
@@ -119,14 +127,6 @@ Let's do that here anyway, again as a preparation for the next step:
 class ParserTest {
     private String input;
 
-    private void givenEmptyDocument() {
-        input = "";
-    }
-
-    private Stream whenParseAll() {
-        return Parser.parseAll(input);
-    }
-
     @Test void shouldParseAllInEmptyDocument() {
         givenEmptyDocument();
 
@@ -134,24 +134,33 @@ class ParserTest {
 
         assertThat(stream.documents()).isEmpty();
     }
+
+    private void givenEmptyDocument() {
+        input = "";
+    }
+
+    private Stream whenParseAll() {
+        return Parser.parseAll(input);
+    }
 }
-``` 
+```
 
 
 ## Adding Structure
 
-It would be nice to group all tests with the same input together, so it's easier to find them in a larger test base.
-You can surround all tests that call, e.g., `givenTwoCommentOnlyDocuments()` with an inner class `GivenTwoCommentOnlyDocuments`.
-To have JUnit still invoke the tests, we'll have to add a `@Nested` annotation:
+It would be nice to group all tests with the same input together, so it's easier to find them in a larger test base,
+and to more easily see if there are some setups missing or duplicated.
+To do so in JUnit 5, you can surround all tests that call, e.g., `givenTwoCommentOnlyDocuments()` with an inner class `GivenTwoCommentOnlyDocuments`.
+To have JUnit still recognize the nested test methods, we'll have to add a `@Nested` annotation:
 
 ```java
 class ParserTest {
     @Nested class GivenOneCommentOnlyDocument {
         @Test void shouldParseAllInDocumentOnly() {
             givenOneCommentOnlyDocument();
-    
+
             Stream stream = whenParseAll();
-    
+
             assertThat(stream.documents()).containsExactly(COMMENT_ONLY);
         }
     }
@@ -207,12 +216,13 @@ The JUnit runner now looks like this:
 
 Most real world tests share only part of the setup with other tests.
 You can extract the common setup and simply add the specific setup in each test.
-I sometimes use an object with all reasonable test values set up, and only modify those relevant for each test.
+I often use objects with all fields set up with reasonable dummy values, and only modify those relevant for each test,
+e.g. setting one field to `null` to test the outcome.
 Just make sure to express that additional setup step in the name of the test, or you may overlook it.
 
 When things get more complex, it's probably better to nest several layers of `Given...` classes,
-even for `Given...` classes with only one test, just to make all setup steps visible in one place, the class names,
-and not some in the class names and some in the method names (which is easier to forget).
+even when they have only one test, just to make all setup steps visible in one place, the class names,
+and not some in the class names and some in the method names.
 
 
 ## Extracting `when...`
@@ -222,8 +232,7 @@ these three also call exactly the same `when...` methods; they only differ in th
 This is, too, code duplication that has a potential to become harmful when the test code base gets big.
 In this carefully crafted example, we have a very symmetric set of three `when...` methods we want to call;
 this not always the case, so it's not something you'll be doing with every test class.
-But it's good to know the technique, just in case.
-Let's first have a look at how it works:
+But it's good to know the technique, just in case. Let's have a look at how it works.
 
 We can extract an abstract class `WhenParseAllFirstAndSingle` to contain the three test methods,
 that delegate the actual verification to abstract `verify...` methods.
@@ -308,7 +317,7 @@ e.g. when `GivenEmptyDocument.whenParseSingle`, which throws an exception, would
 ```
 AssertionError: unexpected exception. see verifyParseSingle for what was expected
 Caused by: ParseException: expected exactly one document, but found 0
-``` 
+```
 
 All of this does add quite some complexity to the `when...` methods, bloating them from 2 lines to 6 with a non-trivial flow.
 Gladly, we can extract that to a generic `whenVerify` method that we can put into a test utilities class or even module.
