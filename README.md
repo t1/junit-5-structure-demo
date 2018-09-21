@@ -118,12 +118,10 @@ Is `whenParseSingle(input)` better than `Parser.parseSingle(input)`?
 It's so simple and unlikely that you will ever have to change it by hand, that it's probably better to *not* extract it.
 If you want to go into more detail, read the Clean Code book by Robert C. Martin, it's worth it!
 
-As stated in the introduction, we extract these methods here only to prepare for the next step.
-
 You can see that the `given...` methods all return an `input` String, while all `when...` methods take that string as an argument.
-When tests get more complex, they produce or require more than one object, so you'll have to pass them via field.
+When tests get more complex, they produce or require more than one object, so you'll *have* to pass them via fields.
 But normally I wouldn't do this in such a simple case.
-Let's do that here anyway, again as a preparation for the next step:
+Let's do that here anyway, as a preparation for the next step:
 
 ```java
 class ParserTest {
@@ -377,7 +375,11 @@ abstract class WhenParseAllFirstAndSingle {
      * @param <T> The type of the result of the `call`
      * @param <E> The type of the expected exception
      */
-    public static <T, E extends Throwable> void whenVerify(Supplier<T> call, Class<E> exceptionClass, Consumer<T> verify, Consumer<E> verifyException) {
+    public static <T, E extends Throwable> void whenVerify(
+        Supplier<T> call,
+        Class<E> exceptionClass,
+        Consumer<T> verify,
+        Consumer<E> verifyException) {
         AtomicReference<T> success = new AtomicReference<>();
         E failure = catchThrowableOfType(() -> success.set(call.get()), exceptionClass);
 
@@ -389,7 +391,7 @@ abstract class WhenParseAllFirstAndSingle {
 }
 ```
 
-The call to `whenVerify` is still not easy to understand;
+The call to <tt>whenVerify</tt> is still far from easy to understand; it's not clean code.
 I've added extensive JavaDoc to help the reader, but it still requires getting into.
 We can make the call more expressive by using a fluent builder, so it looks like this:
 
@@ -557,7 +559,7 @@ Pass the objects that are set up and then used in your `when...` method in field
 
 When there are sets of tests that should be executed in several setups (and given you prefer complexity over duplication),
 you may want to extract them to a super class,
-or (if you need more than one such set in one setup) to an interface with default methods (and make the fields you set up static).
+or (if you need more than one such set in one setup) to an interface with default methods (and make the fields you set up `static`).
 Name these classes or interfaces `When...`
 and delegate the verification to methods called `verify` + the name of the method invoked on the system under test.
 
