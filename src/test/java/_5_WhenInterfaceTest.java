@@ -16,6 +16,10 @@ class _5_WhenInterfaceTest {
     private static String input;
 
 
+    @BeforeEach void resetInput() {
+        input = null;
+    }
+
     ///////////////////////////////////////////////////////////////////////// GIVEN
 
     @Nested class GivenEmptyDocument implements WhenParseAllFirstAndSingle {

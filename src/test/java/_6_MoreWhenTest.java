@@ -107,14 +107,10 @@ class _6_MoreWhenTest {
             Stream stream = Parser.parseAll(input);
 
             verifyParseAll(stream);
-            verifyToStringEqualsInput(stream);
+            assertThat(stream).hasToString(input);
         }
 
         void verifyParseAll(Stream stream);
-
-        default void verifyToStringEqualsInput(Stream stream) {
-            assertThat(stream).hasToString(input);
-        }
 
 
         @Test default void whenParseFirst() {
@@ -122,8 +118,8 @@ class _6_MoreWhenTest {
                 .failsWith(ParseException.class).then(this::verifyParseFirstException)
                 .succeeds().then(document ->
             {
-                verifyToStringEqualsInput(document);
                 verifyParseFirst(document);
+                verifyToStringEqualsInput(document);
             });
         }
 
