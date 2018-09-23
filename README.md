@@ -33,14 +33,14 @@ Let's take a parser for a stream of documents (like in YAML) as an example test 
 public class Parser {
     /**
      * Parse the one and only document in the input.
-     * 
+     *
      * @throws ParseException if there is none or more than one.
      */
     public static Document parseSingle(String input);
 
     /**
      * Parse only the first document in the input.
-     * 
+     *
      * @throws ParseException if there is none.
      */
     public static Document parseFirst(String input);
@@ -75,6 +75,7 @@ Following the [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development) `
 then an invocation of the system under test (when),
 and finally a verification of the outcome (then).
 These three parts are delimited with empty lines.
+
 For the verification I use [AssertJ](https://joel-costigliola.github.io/assertj/index.html).
 
 To reduce duplication, we extract the `given` and `when` parts into methods:
@@ -367,7 +368,7 @@ abstract class WhenParseAllFirstAndSingle {
      * Calls the <code>call</code> and verifies the outcome.
      * If it succeeds, it calls <code>verify</code>.
      * If it fails with an exception of type <code>exceptionClass</code>, it calls <code>verifyException</code>.
-     * 
+     *
      * @param call The `when` part to invoke on the system under test
      * @param exceptionClass The type of exception that may be expected
      * @param verify The `then` part to check a successful outcome
@@ -391,7 +392,7 @@ abstract class WhenParseAllFirstAndSingle {
 }
 ```
 
-The call to <tt>whenVerify</tt> is still far from easy to understand; it's not clean code.
+The call to `whenVerify` is still far from easy to understand; it's not clean code.
 I've added extensive JavaDoc to help the reader, but it still requires getting into.
 We can make the call more expressive by using a fluent builder, so it looks like this:
 
@@ -442,8 +443,7 @@ as interfaces can't access non-static fields.
 This looks like a simple change, but it can cause some nasty behavior:
 You'll have to set these fields for every test,
 or you may accidentally inherit them from tests that ran before, i.e. your tests depend on the execution order.
-This will bend the time-space-continuum when you try to debug it.
-So be extra careful.
+This will bend the time-space-continuum when you try to debug it, so be extra careful.
 It's probably worth resetting everything to `null` in a top level `@BeforeEach`.
 Note that `@BeforeEach` methods from super classes are executed before those in sub classes,
 and the `@BeforeEach` of the container class is executed before everything else.
