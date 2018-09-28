@@ -1,6 +1,6 @@
 # Structured JUnit 5 Testing
 
-Automated tests are critical to any reasonable software project.
+Automated tests, in Java most commonly written with JUnit, are critical to any reasonable software project.
 Some even say that test code is more important than production code,
 because it's easier to recreate the production code from the tests than the other way around.
 Anyway, they are valuable assets, so it's necessary to keep them clean.
@@ -17,15 +17,15 @@ JUnit 5 gives us some opportunities to do this even better, and I'll show you so
 
 Any examples I can come up with are necessarily simplified, as they can't have the full complexity of a real system.
 So bear with me while I try to contrive examples with enough complexity to show the effects;
-and allow me to challenge your fantasy that some things, while they are just over engineered at this scale,
+and allow me to challenge your fantasy that some things, while they are just over-engineered at this scale,
 will prove useful when things get bigger.
 
 If you like, you can follow the refactorings done here by looking at the tests
-in [this](https://github.com/t1/junit-5-structure-demo) git project.
+in [this](https://github.com/t1/junit-5-structure-demo) Git project.
 They are numbered to match the order presented here.
 
 
-## Example: Testing a Parser With Three Methods for Four Documents
+## Example: Testing a parser with three methods for four documents
 
 Let's take a parser for a stream of documents (like in YAML) as an example test subject. It has three methods:
 
@@ -53,7 +53,7 @@ public class Parser {
 We use static methods only to make the tests simpler; normally this would be a normal object with member methods.
 
 We write tests for four input files (not to make things too complex):
-One is empty,
+one is empty,
 one contains a document with only one space character,
 one contains a single document containing only a comment,
 and one contains two documents with each only containing a comment.
@@ -71,12 +71,12 @@ class ParserTest {
 }
 ```
 
-Following the [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development) `given-when-then` schema I first have a test setup part (given),
+Following the [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development) `given-when-then` schema, I first have a test setup part (given),
 then an invocation of the system under test (when),
 and finally a verification of the outcome (then).
 These three parts are delimited with empty lines.
 
-For the verification I use [AssertJ](https://joel-costigliola.github.io/assertj/index.html).
+For the verification, I use [AssertJ](https://joel-costigliola.github.io/assertj/index.html).
 
 To reduce duplication, we extract the `given` and `when` parts into methods:
 
@@ -119,7 +119,7 @@ Is `whenParseSingle(input)` better than `Parser.parseSingle(input)`?
 It's so simple and unlikely that you will ever have to change it by hand, that it's probably better to *not* extract it.
 If you want to go into more detail, read the Clean Code book by Robert C. Martin, it's worth it!
 
-You can see that the `given...` methods all return an `input` String, while all `when...` methods take that string as an argument.
+You can see that the `given...` methods all return an `input` string, while all `when...` methods take that string as an argument.
 When tests get more complex, they produce or require more than one object, so you'll *have* to pass them via fields.
 But normally I wouldn't do this in such a simple case.
 Let's do that here anyway, as a preparation for the next step:
@@ -147,7 +147,7 @@ class ParserTest {
 ```
 
 
-## Adding Structure
+## Adding structure
 
 It would be nice to group all tests with the same input together, so it's easier to find them in a larger test base,
 and to more easily see if there are some setups missing or duplicated.
@@ -227,7 +227,7 @@ When things get more complex, it's probably better to nest several layers of `Gi
 even when they have only one test, just to make all setup steps visible in one place, the class names,
 and not some in the class names and some in the method names.
 
-When you start extracting you setups like this, you will find that it gets easier to concentrate on one thing at a time:
+When you start extracting your setups like this, you will find that it gets easier to concentrate on one thing at a time:
 within one test setup, it's easier to see if you have covered all requirements in this context;
 and when you look at the setup classes, it's easier to see if you have all variations of the setup covered.
 
@@ -245,7 +245,7 @@ In this carefully crafted example, we have a very symmetric set of three `when..
 this not always the case, so it's not something you'll be doing with every test class.
 But it's good to know the technique, just in case. Let's have a look at how it works.
 
-We can extract an abstract class `WhenParseAllFirstAndSingle` to contain the three test methods,
+We can extract an abstract class `WhenParseAllFirstAndSingle` to contain the three test methods
 that delegate the actual verification to abstract `verify...` methods.
 As the `when...` methods are not reused any more and the test methods have the same level of abstraction, we can also inline these.
 
@@ -430,7 +430,7 @@ As seen above, the tests themselves look nice, and that's the most important par
 }
 ```
 
-## Multiple `When...` Classes
+## Multiple `When...` classes
 
 If you have tests that only apply to a specific test setup, you can simply add them directly to that `Given...` class.
 If you have tests that apply to all test setups, you can add them to the `When...` super class.
@@ -441,14 +441,14 @@ You'll then have to change the fields used to pass test setup objects (the `inpu
 as interfaces can't access non-static fields.
 
 This looks like a simple change, but it can cause some nasty behavior:
-You'll have to set these fields for every test,
+you'll have to set these fields for every test,
 or you may accidentally inherit them from tests that ran before, i.e. your tests depend on the execution order.
 This will bend the time-space-continuum when you try to debug it, so be extra careful.
 It's probably worth resetting everything to `null` in a top level `@BeforeEach`.
 Note that `@BeforeEach` methods from super classes are executed before those in sub classes,
 and the `@BeforeEach` of the container class is executed before everything else.
 
-Otherwise, the change is straight forward:
+Otherwise, the change is straightforward:
 
 ```java
 class ParserTest {
@@ -478,10 +478,10 @@ class ParserTest {
 }
 ```
 
-## Generic Verifications
+## Generic verifications
 
 You may want to add generic verifications,
-e.g., YAML documents and streams should render `toString` equal to the input they where generated from.
+e.g. YAML documents and streams should render `toString` equal to the input they where generated from.
 For the `whenParseAll` method, we add a verification line directly after the call to `verifyParseAll`:
 
 ```java
@@ -496,10 +496,10 @@ interface WhenParseAllFirstAndSingle {
 ```
 
 This is not so easy with the the other tests that are sometimes expected to fail (e.g. `whenParseSingle`).
-We chose an implementation using the `whenVerify` method (or the fluent builder) which we wanted to be generic!
+We chose an implementation using the `whenVerify` method (or the fluent builder) which we wanted to be generic.
 We could give up on that and inline it, but that would be sad.
 
-Alternatively we could add the verification to all overridden `verifyParseFirst` methods,
+Alternatively, we could add the verification to all overridden `verifyParseFirst` methods,
 but that would add duplication and it'd be easy to forget.
 What's worse, each new verification we wanted to add, we'd have to add to every `verify...` method;
 this just doesn't scale.
@@ -563,9 +563,9 @@ or (if you need more than one such set in one setup) to an interface with defaul
 Name these classes or interfaces `When...`
 and delegate the verification to methods called `verify` + the name of the method invoked on the system under test.
 
-I think grouping test setups is something you should do even in medium sized test classes; it pays off quickly.
+I think grouping test setups is something you should do even in medium-sized test classes; it pays off quickly.
 Extracting sets of tests adds quite some complexity,
 so you probably should do it only when you have a significantly large set of tests to share between test setups, maybe 5 or more.
 
-I hope this helps you to reap the benefits JUnit 5 provides.
-I'd be glad to hear it, when you have any feedback from nitpicking to success stories.
+I hope this helps you reap the benefits JUnit 5 provides.
+I'd be glad to hear if you have any feedback from nitpicking to success stories.

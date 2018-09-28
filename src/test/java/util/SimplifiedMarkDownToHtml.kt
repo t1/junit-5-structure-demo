@@ -10,32 +10,35 @@ import java.nio.file.Paths
 fun main(args: Array<String>) {
     val html = SimplifiedMarkDownToHtml(README)
         .withBasePath("https://blog.codecentric.de/files/2018/09")
-        .map("structured-test-run" to "250x223" to "56176")
-        .map("grouped-test-run" to "250x270" to "56175")
         .convert()
 
-    println(html)
+    Files.write(Paths.get("README.html"), html.toByteArray())
 }
 
 val README = Paths.get("README.md")!!
 
 class SimplifiedMarkDownToHtml(private val text: String) {
-    constructor(path: Path) : this(Files.newBufferedReader(path))
+    constructor(path: Path) : this(Files.newBufferedReader(path)) {
+        withImageMappings(Paths.get("$path.image-mappings"))
+    }
+
     constructor(reader: Reader) : this(reader.readText())
 
-    companion object {
-        private val TITLE_LINE = "\\A# .*\n\n".toRegex()
-        private val SECTION_LINE = "(?s)\n## ([^\n]*)\n\n".toRegex()
-        private val SINGLE_NEW_LINE = "(?s)([^\n])\n([^\n])".toRegex()
-        private val IMG = "!\\[(.*)]\\(img/(.*)\\.png\\)".toRegex()
-        private val LINK = "\\[(.*?)]\\((.*?)\\)".toRegex()
-        private val CODE = "`(.*?)`".toRegex()
-        private val EM = "\\*(.*?)\\*".toRegex()
+    fun withImageMappings(path: Path) {
+        if (Files.exists(path))
+            Files.readAllLines(path).forEach {
+                val (name, resolution, id) = IMAGE_MAPPING.matchEntire(it)!!.destructured
+                map(name to resolution to id)
+            }
     }
 
     private lateinit var basePath: String
 
-    private val imageMappings = mutableMapOf<String, Pair<String, String>>()
+    private val imageMappings = mutableMapOf<String, ImageMapping>()
+
+    private data class ImageMapping(val name: String, val resolution: String, val id: String) {
+        val alt get() = name.replace('-', ' ')
+    }
 
     fun withBasePath(basePath: String): SimplifiedMarkDownToHtml {
         this.basePath = basePath
@@ -43,7 +46,7 @@ class SimplifiedMarkDownToHtml(private val text: String) {
     }
 
     fun map(pair: Pair<Pair<String, String>, String>): SimplifiedMarkDownToHtml {
-        imageMappings[pair.first.first] = pair.first.second to pair.second
+        imageMappings[pair.first.first] = ImageMapping(pair.first.first, pair.first.second, pair.second)
         return this
     }
 
@@ -57,16 +60,20 @@ class SimplifiedMarkDownToHtml(private val text: String) {
 
     private fun convertText(text: String): String = text
         .replace(TITLE_LINE, "")
-        .replace(SECTION_LINE, "\n<h1>$1</h1>\n\n")
+        .replace(H1, "\n<h1>$1</h1>\n\n")
+        .replace(H2, "\n<h2>$1</h2>\n\n")
+        .replace(H3, "\n<h3>$1</h3>\n\n")
+        .replace(H4, "\n<h4>$1</h4>\n\n")
         .replace(SINGLE_NEW_LINE, "$1 $2")
         .replace(IMG) { this.imageLink(it.groupValues[2]) }
         .replace(LINK, "<a href=\"$2\" rel=\"noopener\" target=\"_blank\">$1</a>")
-        .replace(CODE, "<code>$1</code>")
+        .replace(CODE, "<tt>$1</tt>")
         .replace(EM, "<em>$1</em>")
 
     private fun imageLink(fileName: String): String {
         val mapping = imageMappings[fileName] ?: throw IllegalStateException("missing image mapping for $fileName")
-        return "<a href=\"$basePath/$fileName.png\"><img src=\"$basePath/$fileName-${mapping.first}.png\" alt=\"\" class=\"alignnone size-medium wp-image-${mapping.second}\"/></a>"
+        return "<a href=\"$basePath/${mapping.name}.png\"><img src=\"$basePath/${mapping.name}-${mapping.resolution}.png\" alt=\"${mapping.alt}\" " +
+            "class=\"alignnone size-medium wp-image-${mapping.id}\" /></a>"
     }
 
     private fun convertCode(text: String): String =
@@ -74,6 +81,22 @@ class SimplifiedMarkDownToHtml(private val text: String) {
             text.startsWith("java") -> " lang=\"java5\">" + text.substring(4)
             else -> ">$text"
         } + "</pre>"
+
+
+    companion object {
+        private val IMAGE_MAPPING = "(.*): ([0-9x]*):([0-9]*)".toRegex()
+
+        private val TITLE_LINE = "\\A# .*\n\n".toRegex()
+        private val H1 = "(?s)\n# ([^\n]*)\n\n".toRegex()
+        private val H2 = "(?s)\n## ([^\n]*)\n\n".toRegex()
+        private val H3 = "(?s)\n### ([^\n]*)\n\n".toRegex()
+        private val H4 = "(?s)\n#### ([^\n]*)\n\n".toRegex()
+        private val SINGLE_NEW_LINE = "(?s)([^\n])\n([^\n])".toRegex()
+        private val IMG = "!\\[(.*)]\\(img/(.*)\\.png\\)".toRegex()
+        private val LINK = "\\[(.*?)]\\((.*?)\\)".toRegex()
+        private val CODE = "`(.*?)`".toRegex()
+        private val EM = "\\*(.*?)\\*".toRegex()
+    }
 }
 
 private val Int.isOdd: Boolean get() = (this % 2) == 1

@@ -1,15 +1,15 @@
-Automated tests are critical to any reasonable software project. Some even say that test code is more important than production code, because it's easier to recreate the production code from the tests than the other way around. Anyway, they are valuable assets, so it's necessary to keep them clean.
+Automated tests, in Java most commonly written with JUnit, are critical to any reasonable software project. Some even say that test code is more important than production code, because it's easier to recreate the production code from the tests than the other way around. Anyway, they are valuable assets, so it's necessary to keep them clean.
 
 Adding new tests is something you'll be doing every day, but hold yourself from getting into a write-only mode: Its overwhelmingly tempting to simply duplicate an existing test method and change just some details for the new test. But when you refactor the production code, you often have to change some test code, too. If this is spilled all over your tests, you will have a hard time; and what's worse, you will be tempted to not do the refactoring or even stop writing tests. So also in your test code you'll have to reduce code duplication to a minimum from the very beginning. It's so little extra work to do now, when you're into the subject, that it will amortize in no time.
 
 JUnit 5 gives us some opportunities to do this even better, and I'll show you some techniques here.
 
-Any examples I can come up with are necessarily simplified, as they can't have the full complexity of a real system. So bear with me while I try to contrive examples with enough complexity to show the effects; and allow me to challenge your fantasy that some things, while they are just over engineered at this scale, will prove useful when things get bigger.
+Any examples I can come up with are necessarily simplified, as they can't have the full complexity of a real system. So bear with me while I try to contrive examples with enough complexity to show the effects; and allow me to challenge your fantasy that some things, while they are just over-engineered at this scale, will prove useful when things get bigger.
 
-If you like, you can follow the refactorings done here by looking at the tests in <a href="https://github.com/t1/junit-5-structure-demo" rel="noopener" target="_blank">this</a> git project. They are numbered to match the order presented here.
+If you like, you can follow the refactorings done here by looking at the tests in <a href="https://github.com/t1/junit-5-structure-demo" rel="noopener" target="_blank">this</a> Git project. They are numbered to match the order presented here.
 
 
-<h1>Example: Testing a Parser With Three Methods for Four Documents</h1>
+<h2>Example: Testing a parser with three methods for four documents</h2>
 
 Let's take a parser for a stream of documents (like in YAML) as an example test subject. It has three methods:
 
@@ -36,7 +36,7 @@ public class Parser {
 
 We use static methods only to make the tests simpler; normally this would be a normal object with member methods.
 
-We write tests for four input files (not to make things too complex): One is empty, one contains a document with only one space character, one contains a single document containing only a comment, and one contains two documents with each only containing a comment. That makes a total of 12 tests looking similar to this one:
+We write tests for four input files (not to make things too complex): one is empty, one contains a document with only one space character, one contains a single document containing only a comment, and one contains two documents with each only containing a comment. That makes a total of 12 tests looking similar to this one:
 
 <pre lang="java5">
 class ParserTest {
@@ -50,11 +50,11 @@ class ParserTest {
 }
 </pre>
 
-Following the <a href="https://en.wikipedia.org/wiki/Behavior-driven_development" rel="noopener" target="_blank">BDD</a> <code>given-when-then</code> schema I first have a test setup part (given), then an invocation of the system under test (when), and finally a verification of the outcome (then). These three parts are delimited with empty lines.
+Following the <a href="https://en.wikipedia.org/wiki/Behavior-driven_development" rel="noopener" target="_blank">BDD</a> <tt>given-when-then</tt> schema, I first have a test setup part (given), then an invocation of the system under test (when), and finally a verification of the outcome (then). These three parts are delimited with empty lines.
 
-For the verification I use <a href="https://joel-costigliola.github.io/assertj/index.html" rel="noopener" target="_blank">AssertJ</a>.
+For the verification, I use <a href="https://joel-costigliola.github.io/assertj/index.html" rel="noopener" target="_blank">AssertJ</a>.
 
-To reduce duplication, we extract the <code>given</code> and <code>when</code> parts into methods:
+To reduce duplication, we extract the <tt>given</tt> and <tt>when</tt> parts into methods:
 
 <pre lang="java5">
 class ParserTest {
@@ -82,11 +82,11 @@ class ParserTest {
 }
 </pre>
 
-The <code>given...</code> methods are called three times each, once for every parser method. The <code>when...</code> methods are called four times each, once for every input document, minus the cases where the tests expect exceptions. There is actually not so much reuse for the <code>then...</code> methods; we only extract some constants for the expected documents here, e.g. <code>COMMENT_ONLY</code>.
+The <tt>given...</tt> methods are called three times each, once for every parser method. The <tt>when...</tt> methods are called four times each, once for every input document, minus the cases where the tests expect exceptions. There is actually not so much reuse for the <tt>then...</tt> methods; we only extract some constants for the expected documents here, e.g. <tt>COMMENT_ONLY</tt>.
 
-But reuse is not the most important reason to extract a method. It's more about hiding complexity and staying at a single level of abstraction. As always, you'll have to find the right balance: Is <code>whenParseSingle(input)</code> better than <code>Parser.parseSingle(input)</code>? It's so simple and unlikely that you will ever have to change it by hand, that it's probably better to <em>not</em> extract it. If you want to go into more detail, read the Clean Code book by Robert C. Martin, it's worth it!
+But reuse is not the most important reason to extract a method. It's more about hiding complexity and staying at a single level of abstraction. As always, you'll have to find the right balance: Is <tt>whenParseSingle(input)</tt> better than <tt>Parser.parseSingle(input)</tt>? It's so simple and unlikely that you will ever have to change it by hand, that it's probably better to <em>not</em> extract it. If you want to go into more detail, read the Clean Code book by Robert C. Martin, it's worth it!
 
-You can see that the <code>given...</code> methods all return an <code>input</code> String, while all <code>when...</code> methods take that string as an argument. When tests get more complex, they produce or require more than one object, so you'll <em>have</em> to pass them via fields. But normally I wouldn't do this in such a simple case. Let's do that here anyway, as a preparation for the next step:
+You can see that the <tt>given...</tt> methods all return an <tt>input</tt> string, while all <tt>when...</tt> methods take that string as an argument. When tests get more complex, they produce or require more than one object, so you'll <em>have</em> to pass them via fields. But normally I wouldn't do this in such a simple case. Let's do that here anyway, as a preparation for the next step:
 
 <pre lang="java5">
 class ParserTest {
@@ -111,9 +111,9 @@ class ParserTest {
 </pre>
 
 
-<h1>Adding Structure</h1>
+<h2>Adding structure</h2>
 
-It would be nice to group all tests with the same input together, so it's easier to find them in a larger test base, and to more easily see if there are some setups missing or duplicated. To do so in JUnit 5, you can surround all tests that call, e.g., <code>givenTwoCommentOnlyDocuments()</code> with an inner class <code>GivenTwoCommentOnlyDocuments</code>. To have JUnit still recognize the nested test methods, we'll have to add a <code>@Nested</code> annotation:
+It would be nice to group all tests with the same input together, so it's easier to find them in a larger test base, and to more easily see if there are some setups missing or duplicated. To do so in JUnit 5, you can surround all tests that call, e.g., <tt>givenTwoCommentOnlyDocuments()</tt> with an inner class <tt>GivenTwoCommentOnlyDocuments</tt>. To have JUnit still recognize the nested test methods, we'll have to add a <tt>@Nested</tt> annotation:
 
 <pre lang="java5">
 class ParserTest {
@@ -131,9 +131,9 @@ class ParserTest {
 
 In contrast to having separate top-level test classes, JUnit runs these tests as nested groups, so we see the test run structured like this:
 
-<a href="https://blog.codecentric.de/files/2018/09/structured-test-run.png"><img src="https://blog.codecentric.de/files/2018/09/structured-test-run-250x223.png" alt="" class="alignnone size-medium wp-image-56176"/></a>
+<a href="https://blog.codecentric.de/files/2018/09/structured-test-run.png"><img src="https://blog.codecentric.de/files/2018/09/structured-test-run-250x223.png" alt="structured test run" class="alignnone size-medium wp-image-56176" /></a>
 
-Nice, but we can go a step further. Instead of calling the respective <code>given...</code> method from each test method, we can call it in a <code>@BeforeEach</code> setup method, and as there is now only one call for each <code>given...</code> method, we can inline it:
+Nice, but we can go a step further. Instead of calling the respective <tt>given...</tt> method from each test method, we can call it in a <tt>@BeforeEach</tt> setup method, and as there is now only one call for each <tt>given...</tt> method, we can inline it:
 
 <pre lang="java5">
 @Nested class GivenTwoCommentOnlyDocuments {
@@ -163,28 +163,28 @@ We could have a little bit less code (which is generally a good thing) by using 
 }
 </pre>
 
-But I prefer methods to have names that say what they do, and as you can see in the first variant, setup methods are no exception. I sometimes even have several <code>@BeforeEach</code> methods in a single class, when they do separate setup work. This gives me the advantage that I don't have to read the method body to understand what it does, and when some setup doesn't work as expected, I can start by looking directly at the method that is responsible for that. But I must admit that this is actually some repetition in this case; probably it's a matter of taste.
+But I prefer methods to have names that say what they do, and as you can see in the first variant, setup methods are no exception. I sometimes even have several <tt>@BeforeEach</tt> methods in a single class, when they do separate setup work. This gives me the advantage that I don't have to read the method body to understand what it does, and when some setup doesn't work as expected, I can start by looking directly at the method that is responsible for that. But I must admit that this is actually some repetition in this case; probably it's a matter of taste.
 
-Now the test method names still describe the setup they run in, i.e. the <code>InDocumentOnly</code> part in <code>shouldParseSingleInDocumentOnly</code>. In the code structure as well as in the output provided by the JUnit runner, this is redundant, so we should remove it: <code>shouldParseSingle</code>.
+Now the test method names still describe the setup they run in, i.e. the <tt>InDocumentOnly</tt> part in <tt>shouldParseSingleInDocumentOnly</tt>. In the code structure as well as in the output provided by the JUnit runner, this is redundant, so we should remove it: <tt>shouldParseSingle</tt>.
 
 The JUnit runner now looks like this:
 
-<a href="https://blog.codecentric.de/files/2018/09/grouped-test-run.png"><img src="https://blog.codecentric.de/files/2018/09/grouped-test-run-250x270.png" alt="" class="alignnone size-medium wp-image-56175"/></a>
+<a href="https://blog.codecentric.de/files/2018/09/grouped-test-run.png"><img src="https://blog.codecentric.de/files/2018/09/grouped-test-run-250x270.png" alt="grouped test run" class="alignnone size-medium wp-image-56175" /></a>
 
-Most real world tests share only part of the setup with other tests. You can extract the common setup and simply add the specific setup in each test. I often use objects with all fields set up with reasonable dummy values, and only modify those relevant for each test, e.g. setting one field to <code>null</code> to test that specific outcome. Just make sure to express any additional setup steps in the name of the test, or you may overlook it.
+Most real world tests share only part of the setup with other tests. You can extract the common setup and simply add the specific setup in each test. I often use objects with all fields set up with reasonable dummy values, and only modify those relevant for each test, e.g. setting one field to <tt>null</tt> to test that specific outcome. Just make sure to express any additional setup steps in the name of the test, or you may overlook it.
 
-When things get more complex, it's probably better to nest several layers of <code>Given...</code> classes, even when they have only one test, just to make all setup steps visible in one place, the class names, and not some in the class names and some in the method names.
+When things get more complex, it's probably better to nest several layers of <tt>Given...</tt> classes, even when they have only one test, just to make all setup steps visible in one place, the class names, and not some in the class names and some in the method names.
 
-When you start extracting you setups like this, you will find that it gets easier to concentrate on one thing at a time: within one test setup, it's easier to see if you have covered all requirements in this context; and when you look at the setup classes, it's easier to see if you have all variations of the setup covered.
+When you start extracting your setups like this, you will find that it gets easier to concentrate on one thing at a time: within one test setup, it's easier to see if you have covered all requirements in this context; and when you look at the setup classes, it's easier to see if you have all variations of the setup covered.
 
 
-<h1>Extracting <code>when...</code></h1>
+<h2>Extracting <tt>when...</tt></h2>
 
-The next step gets a little bit more involved and there are some forces to balance. If it's too difficult to grasp now, you can also simply start by just extracting <code>Given...</code> classes as described above. When you're fluent with that pattern and feel the need for more, you can return here and continue to learn.
+The next step gets a little bit more involved and there are some forces to balance. If it's too difficult to grasp now, you can also simply start by just extracting <tt>Given...</tt> classes as described above. When you're fluent with that pattern and feel the need for more, you can return here and continue to learn.
 
-You may have noticed that the four classes not only all have the same three test method names (except for the tests that catch exceptions), these three also call exactly the same <code>when...</code> methods; they only differ in the checks performed. This is, too, code duplication that has a potential to become harmful when the test code base gets big. In this carefully crafted example, we have a very symmetric set of three <code>when...</code> methods we want to call; this not always the case, so it's not something you'll be doing with every test class. But it's good to know the technique, just in case. Let's have a look at how it works.
+You may have noticed that the four classes not only all have the same three test method names (except for the tests that catch exceptions), these three also call exactly the same <tt>when...</tt> methods; they only differ in the checks performed. This is, too, code duplication that has a potential to become harmful when the test code base gets big. In this carefully crafted example, we have a very symmetric set of three <tt>when...</tt> methods we want to call; this not always the case, so it's not something you'll be doing with every test class. But it's good to know the technique, just in case. Let's have a look at how it works.
 
-We can extract an abstract class <code>WhenParseAllFirstAndSingle</code> to contain the three test methods, that delegate the actual verification to abstract <code>verify...</code> methods. As the <code>when...</code> methods are not reused any more and the test methods have the same level of abstraction, we can also inline these.
+We can extract an abstract class <tt>WhenParseAllFirstAndSingle</tt> to contain the three test methods that delegate the actual verification to abstract <tt>verify...</tt> methods. As the <tt>when...</tt> methods are not reused any more and the test methods have the same level of abstraction, we can also inline these.
 
 <pre lang="java5">
 class ParserTest {
@@ -213,11 +213,11 @@ class ParserTest {
 }
 </pre>
 
-The verification is done in the implementations, so we can't say something like <code>thenIsEmpty</code>, we'll need a generic name. <code>thenParseAll</code> would be misleading, so <code>verify</code> with the method called is a good name, e.g. <code>verifyParseAll</code>.
+The verification is done in the implementations, so we can't say something like <tt>thenIsEmpty</tt>, we'll need a generic name. <tt>thenParseAll</tt> would be misleading, so <tt>verify</tt> with the method called is a good name, e.g. <tt>verifyParseAll</tt>.
 
-This extraction works fine for <code>parseAll</code> and the <code>whenParseAll</code> method is simple to understand. But, e.g., <code>parseSingle</code> throws an exception when there is more than one document. So the <code>whenParseSingle</code> test has to delegate the exception for verification, too.
+This extraction works fine for <tt>parseAll</tt> and the <tt>whenParseAll</tt> method is simple to understand. But, e.g., <tt>parseSingle</tt> throws an exception when there is more than one document. So the <tt>whenParseSingle</tt> test has to delegate the exception for verification, too.
 
-Let's introduce a second <code>verifyParseSingleException</code> method for that check. When we expect an exception, we don't want to implement the <code>verifyParseSingle</code> method any more, and when we don't expect an exception, we don't want to implement the <code>verifyParseSingleException</code>, so we give both <code>verify...</code> methods a default implementation instead:
+Let's introduce a second <tt>verifyParseSingleException</tt> method for that check. When we expect an exception, we don't want to implement the <tt>verifyParseSingle</tt> method any more, and when we don't expect an exception, we don't want to implement the <tt>verifyParseSingleException</tt>, so we give both <tt>verify...</tt> methods a default implementation instead:
 
 <pre lang="java5">
 abstract class WhenParseAllFirstAndSingle {
@@ -248,7 +248,7 @@ That's okay, but when you expect an exception, but it doesn't throw and the veri
 java.lang.AssertionError: Expecting code to throw <class ParseException> but threw <class java.lang.AssertionError> instead
 </pre>
 
-So we need an even smarter <code>whenParseSingle</code>:
+So we need an even smarter <tt>whenParseSingle</tt>:
 
 <pre lang="java5">
 abstract class WhenParseAllFirstAndSingle {
@@ -264,16 +264,16 @@ abstract class WhenParseAllFirstAndSingle {
 }
 </pre>
 
-We have to pass the document from the closure back to the method level. I can't use a simple variable, as it has to be assigned to <code>null</code> as a default, making it not-effectively-final, so the compiler won't allow me to. Instead, I use an <code>AtomicReference</code>.
+We have to pass the document from the closure back to the method level. I can't use a simple variable, as it has to be assigned to <tt>null</tt> as a default, making it not-effectively-final, so the compiler won't allow me to. Instead, I use an <tt>AtomicReference</tt>.
 
-In this way, even when a test that expects a result throws an exception or vice versa, the error message is nice and helpful, e.g. when <code>GivenEmptyDocument.whenParseSingle</code>, which throws an exception, would expect an empty document, the exception would be:
+In this way, even when a test that expects a result throws an exception or vice versa, the error message is nice and helpful, e.g. when <tt>GivenEmptyDocument.whenParseSingle</tt>, which throws an exception, would expect an empty document, the exception would be:
 
 <pre>
 AssertionError: unexpected exception. see verifyParseSingle for what was expected
 Caused by: ParseException: expected exactly one document, but found 0
 </pre>
 
-All of this does add quite some complexity to the <code>when...</code> methods, bloating them from 2 lines to 6 with a non-trivial flow. Gladly, we can extract that to a generic <code>whenVerify</code> method that we can put into a test utilities class or even module.
+All of this does add quite some complexity to the <tt>when...</tt> methods, bloating them from 2 lines to 6 with a non-trivial flow. Gladly, we can extract that to a generic <tt>whenVerify</tt> method that we can put into a test utilities class or even module.
 
 <pre lang="java5">
 abstract class WhenParseAllFirstAndSingle {
@@ -317,7 +317,7 @@ abstract class WhenParseAllFirstAndSingle {
 }
 </pre>
 
-The call to <code>whenVerify</code> is still far from easy to understand; it's not clean code. I've added extensive JavaDoc to help the reader, but it still requires getting into. We can make the call more expressive by using a fluent builder, so it looks like this:
+The call to <tt>whenVerify</tt> is still far from easy to understand; it's not clean code. I've added extensive JavaDoc to help the reader, but it still requires getting into. We can make the call more expressive by using a fluent builder, so it looks like this:
 
 <pre lang="java5">
 abstract class WhenParseAllFirstAndSingle {
@@ -353,13 +353,13 @@ As seen above, the tests themselves look nice, and that's the most important par
 }
 </pre>
 
-<h1>Multiple <code>When...</code> Classes</h1>
+<h2>Multiple <tt>When...</tt> classes</h2>
 
-If you have tests that only apply to a specific test setup, you can simply add them directly to that <code>Given...</code> class. If you have tests that apply to all test setups, you can add them to the <code>When...</code> super class. But there may be tests that apply to more than one setup, but not to all. In other words: you may want to have more than one <code>When...</code> superclass, which isn't allowed in Java, but you can change the <code>When...</code> classes to interfaces with default methods. You'll then have to change the fields used to pass test setup objects (the <code>input</code> String in our example) to be <code>static</code>, as interfaces can't access non-static fields.
+If you have tests that only apply to a specific test setup, you can simply add them directly to that <tt>Given...</tt> class. If you have tests that apply to all test setups, you can add them to the <tt>When...</tt> super class. But there may be tests that apply to more than one setup, but not to all. In other words: you may want to have more than one <tt>When...</tt> superclass, which isn't allowed in Java, but you can change the <tt>When...</tt> classes to interfaces with default methods. You'll then have to change the fields used to pass test setup objects (the <tt>input</tt> String in our example) to be <tt>static</tt>, as interfaces can't access non-static fields.
 
-This looks like a simple change, but it can cause some nasty behavior: You'll have to set these fields for every test, or you may accidentally inherit them from tests that ran before, i.e. your tests depend on the execution order. This will bend the time-space-continuum when you try to debug it, so be extra careful. It's probably worth resetting everything to <code>null</code> in a top level <code>@BeforeEach</code>. Note that <code>@BeforeEach</code> methods from super classes are executed before those in sub classes, and the <code>@BeforeEach</code> of the container class is executed before everything else.
+This looks like a simple change, but it can cause some nasty behavior: you'll have to set these fields for every test, or you may accidentally inherit them from tests that ran before, i.e. your tests depend on the execution order. This will bend the time-space-continuum when you try to debug it, so be extra careful. It's probably worth resetting everything to <tt>null</tt> in a top level <tt>@BeforeEach</tt>. Note that <tt>@BeforeEach</tt> methods from super classes are executed before those in sub classes, and the <tt>@BeforeEach</tt> of the container class is executed before everything else.
 
-Otherwise, the change is straight forward:
+Otherwise, the change is straightforward:
 
 <pre lang="java5">
 class ParserTest {
@@ -389,9 +389,9 @@ class ParserTest {
 }
 </pre>
 
-<h1>Generic Verifications</h1>
+<h2>Generic verifications</h2>
 
-You may want to add generic verifications, e.g., YAML documents and streams should render <code>toString</code> equal to the input they where generated from. For the <code>whenParseAll</code> method, we add a verification line directly after the call to <code>verifyParseAll</code>:
+You may want to add generic verifications, e.g. YAML documents and streams should render <tt>toString</tt> equal to the input they where generated from. For the <tt>whenParseAll</tt> method, we add a verification line directly after the call to <tt>verifyParseAll</tt>:
 
 <pre lang="java5">
 interface WhenParseAllFirstAndSingle {
@@ -404,9 +404,9 @@ interface WhenParseAllFirstAndSingle {
 }
 </pre>
 
-This is not so easy with the the other tests that are sometimes expected to fail (e.g. <code>whenParseSingle</code>). We chose an implementation using the <code>whenVerify</code> method (or the fluent builder) which we wanted to be generic! We could give up on that and inline it, but that would be sad.
+This is not so easy with the the other tests that are sometimes expected to fail (e.g. <tt>whenParseSingle</tt>). We chose an implementation using the <tt>whenVerify</tt> method (or the fluent builder) which we wanted to be generic. We could give up on that and inline it, but that would be sad.
 
-Alternatively we could add the verification to all overridden <code>verifyParseFirst</code> methods, but that would add duplication and it'd be easy to forget. What's worse, each new verification we wanted to add, we'd have to add to every <code>verify...</code> method; this just doesn't scale.
+Alternatively, we could add the verification to all overridden <tt>verifyParseFirst</tt> methods, but that would add duplication and it'd be easy to forget. What's worse, each new verification we wanted to add, we'd have to add to every <tt>verify...</tt> method; this just doesn't scale.
 
 It's better to call the generic verification directly after the abstract verification:
 
@@ -438,9 +438,9 @@ class ParserTest {
 }
 </pre>
 
-If you have more than one generic verification, it would be better to extract them to a <code>verifyParseFirstGeneric</code> method.
+If you have more than one generic verification, it would be better to extract them to a <tt>verifyParseFirstGeneric</tt> method.
 
-There is one last little nasty detail hiding in this test example: The <code>verifyToStringEqualsInput(Document document)</code> method has to be overridden in <code>GivenTwoCommentOnlyDocuments</code>, as only the first document from the stream is part of the <code>toString</code>, not the complete <code>input</code>. Make sure to briefly explain such things with a comment:
+There is one last little nasty detail hiding in this test example: The <tt>verifyToStringEqualsInput(Document document)</tt> method has to be overridden in <tt>GivenTwoCommentOnlyDocuments</tt>, as only the first document from the stream is part of the <tt>toString</tt>, not the complete <tt>input</tt>. Make sure to briefly explain such things with a comment:
 
 <pre lang="java5">
 @Nested class GivenTwoCommentOnlyDocuments implements WhenParseAllFirstAndSingle {
@@ -451,12 +451,12 @@ There is one last little nasty detail hiding in this test example: The <code>ver
 </pre>
 
 
-<h1>tl;dr</h1>
+<h2>tl;dr</h2>
 
-To add structure to a long sequence of test methods in a class, group them according to their test setup in inner classes annotated as <code>@Nested</code>. Name these classes <code>Given...</code> and set them up in one or more <code>@BeforeEach</code> methods. Pass the objects that are set up and then used in your <code>when...</code> method in fields.
+To add structure to a long sequence of test methods in a class, group them according to their test setup in inner classes annotated as <tt>@Nested</tt>. Name these classes <tt>Given...</tt> and set them up in one or more <tt>@BeforeEach</tt> methods. Pass the objects that are set up and then used in your <tt>when...</tt> method in fields.
 
-When there are sets of tests that should be executed in several setups (and given you prefer complexity over duplication), you may want to extract them to a super class, or (if you need more than one such set in one setup) to an interface with default methods (and make the fields you set up <code>static</code>). Name these classes or interfaces <code>When...</code> and delegate the verification to methods called <code>verify</code> + the name of the method invoked on the system under test.
+When there are sets of tests that should be executed in several setups (and given you prefer complexity over duplication), you may want to extract them to a super class, or (if you need more than one such set in one setup) to an interface with default methods (and make the fields you set up <tt>static</tt>). Name these classes or interfaces <tt>When...</tt> and delegate the verification to methods called <tt>verify</tt> + the name of the method invoked on the system under test.
 
-I think grouping test setups is something you should do even in medium sized test classes; it pays off quickly. Extracting sets of tests adds quite some complexity, so you probably should do it only when you have a significantly large set of tests to share between test setups, maybe 5 or more.
+I think grouping test setups is something you should do even in medium-sized test classes; it pays off quickly. Extracting sets of tests adds quite some complexity, so you probably should do it only when you have a significantly large set of tests to share between test setups, maybe 5 or more.
 
-I hope this helps you to reap the benefits JUnit 5 provides. I'd be glad to hear it, when you have any feedback from nitpicking to success stories.
+I hope this helps you reap the benefits JUnit 5 provides. I'd be glad to hear if you have any feedback from nitpicking to success stories.
