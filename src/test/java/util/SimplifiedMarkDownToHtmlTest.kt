@@ -1,6 +1,7 @@
 package util
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.contentOf
 import org.junit.jupiter.api.Test
 import java.nio.file.Paths
 
@@ -12,13 +13,14 @@ class SimplifiedMarkDownToHtmlTest {
     private val mappings = mutableMapOf<Pair<String, String>, String>()
 
     @Test
-    fun shouldConvertToHtml() {
-        val converter = SimplifiedMarkDownToHtml(README)
+    fun shouldConvertFromFileWithImageMappings() {
+        val readme = Paths.get("src/test/resources/README.md")
+        val converter = SimplifiedMarkDownToHtml(readme)
             .withBasePath("https://blog.codecentric.de/files/2018/09")
 
         val html = converter.convert()
 
-        Assertions.assertThat(html).isEqualTo(Assertions.contentOf(Paths.get("README.html").toFile()))
+        assertThat(html).isEqualTo(contentOf(readme.resolveSibling("README.html").toFile()))
     }
 
     private fun shouldConvert(pair: Pair<String, String>) {
@@ -27,7 +29,7 @@ class SimplifiedMarkDownToHtmlTest {
 
         val html = converter.convert()
 
-        Assertions.assertThat(html).isEqualTo(pair.second)
+        assertThat(html).isEqualTo(pair.second)
     }
 
     private fun init(converter: SimplifiedMarkDownToHtml) {

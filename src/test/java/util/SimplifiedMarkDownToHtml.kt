@@ -5,17 +5,17 @@ import java.io.Reader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.test.fail
 
 @Throws(IOException::class)
 fun main(args: Array<String>) {
-    val html = SimplifiedMarkDownToHtml(README)
-        .withBasePath("https://blog.codecentric.de/files/2018/09")
-        .convert()
+    if (args.size != 1) fail("Requires exactly one attributes: the name of the markdown file")
+    val file = Paths.get(args[0])
+
+    val html = SimplifiedMarkDownToHtml(file).convert()
 
     Files.write(Paths.get("README.html"), html.toByteArray())
 }
-
-val README = Paths.get("README.md")!!
 
 class SimplifiedMarkDownToHtml(private val text: String) {
     constructor(path: Path) : this(Files.newBufferedReader(path)) {
@@ -27,8 +27,12 @@ class SimplifiedMarkDownToHtml(private val text: String) {
     fun withImageMappings(path: Path) {
         if (Files.exists(path))
             Files.readAllLines(path).forEach {
-                val (name, resolution, id) = IMAGE_MAPPING.matchEntire(it)!!.destructured
-                map(name to resolution to id)
+                if (it.startsWith(BASE_PATH_PREFIX)) {
+                    basePath = it.substring(BASE_PATH_PREFIX.length)
+                } else {
+                    val (name, resolution, id) = IMAGE_MAPPING.matchEntire(it)!!.destructured
+                    map(name to resolution to id)
+                }
             }
     }
 
@@ -84,6 +88,7 @@ class SimplifiedMarkDownToHtml(private val text: String) {
 
 
     companion object {
+        private const val BASE_PATH_PREFIX = "base-bath: "
         private val IMAGE_MAPPING = "(.*): ([0-9x]*):([0-9]*)".toRegex()
 
         private val TITLE_LINE = "\\A# .*\n\n".toRegex()
